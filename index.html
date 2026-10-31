@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Odontograma Mexodonto</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f3f6fa;
+  margin: 0;
+  padding: 15px;
+  color: #263445;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+}
+
+header {
+  background: #243e70;
+  color: white;
+  padding: 22px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+section {
+  background: white;
+  padding: 18px;
+  margin-top: 18px;
+  border-radius: 12px;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 12px;
+  margin: 7px 0 14px;
+  border: 1px solid #ccd3df;
+  border-radius: 7px;
+  box-sizing: border-box;
+  font-size: 16px;
+}
+
+button {
+  cursor: pointer;
+  padding: 12px;
+  border: none;
+  border-radius: 7px;
+  background: #315b9a;
+  color: white;
+  font-size: 14px;
+}
+
+button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 3px solid #f0b44b;
+  outline-offset: 2px;
+}
+
+.dentition {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+  margin: 15px 0;
+}
+
+.tooth {
+  width: 39px;
+  height: 45px;
+  padding: 4px;
+  background: #e8edf5;
+  color: #243e70;
+  border: 1px solid #aab7c9;
+  font-weight: bold;
+}
+
+.tooth.selected {
+  background: #315b9a;
+  color: white;
+}
+
+.label {
+  font-weight: bold;
+  margin-top: 12px;
+  display: block;
+}
+
+.surface-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 10px 0 18px;
+}
+
+.surface-options label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.surface-options input {
+  width: auto;
+  margin: 0;
+}
+
+.record {
+  border-left: 5px solid #315b9a;
+  padding: 12px;
+  margin: 10px 0;
+  background: #f1f5fa;
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+}
+
+.record button {
+  margin: 5px 5px 0 0;
+}
+
+.danger {
+  background: #b43c3c;
+}
+
+.secondary {
+  background: #66758b;
+}
+
+h2 {
+  color: #243e70;
+}
+
+small {
+  color: #66758b;
+}
+
+@media (max-width: 400px) {
+  .tooth {
+    width: 34px;
+    height: 42px;
+    font-size: 12px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+<h1>🦷 MEXODONTO</h1>
+<p>Odontograma digital interactivo</p>
+</header>
+
+<section>
+<h2>1. Datos del paciente</h2>
+
+<label class="label">Nombre del paciente</label>
+<input id="patient" type="text" placeholder="Nombre del paciente">
+
+<label class="label">Número de expediente</label>
+<input id="recordNumber" type="text" placeholder="Número de expediente">
+
+<label class="label">Fecha de consulta</label>
+<input id="date" type="date">
+</section>
+
+<section>
+<h2>2. Odontograma</h2>
+
+<label class="label">Seleccionar dentición</label>
+
+<select id="dentition">
+<option value="permanent">Dentición permanente</option>
+<option value="temporary">Dentición temporal</option>
+</select>
+
+<p><strong>Arcada superior</strong></p>
+<div class="dentition" id="upper"></div>
+
+<p><strong>Arcada inferior</strong></p>
+<div class="dentition" id="lower"></div>
+
+<p><small>Selecciona una pieza dental para registrar su diagnóstico.</small></p>
+<p id="selectedTooth">Ningún diente seleccionado</p>
+</section>
+
+<section>
+<h2>3. Diagnóstico y tratamiento</h2>
+
+<label class="label">Superficie dental</label>
+
+<div class="surface-options">
+<label><input type="checkbox" name="surface" value="Oclusal"> Oclusal</label>
+<label><input type="checkbox" name="surface" value="Mesial"> Mesial</label>
+<label><input type="checkbox" name="surface" value="Distal"> Distal</label>
+<label><input type="checkbox" name="surface" value="Vestibular"> Vestibular</label>
+<label><input type="checkbox" name="surface" value="Lingual/Palatina"> Lingual/Palatina</label>
+</div>
+
+<label class="label">Diagnóstico</label>
+<select id="diagnosis">
+<option value="">Seleccionar diagnóstico</option>
+<option>Caries</option>
+<option>Caries recurrente</option>
+<option>Restauración existente</option>
+<option>Restauración defectuosa</option>
+<option>Fractura dental</option>
+<option>Ausencia dental</option>
+<option>Diente retenido</option>
+<option>Movilidad dental</option>
+<option>Desgaste dental</option>
+<option>Lesión periapical</option>
+<option>Tratamiento endodóntico</option>
+<option>Corona existente</option>
+<option>Extracción indicada</option>
+<option>Sin alteraciones clínicas registradas</option>
+</select>
+
+<label class="label">Tratamiento</label>
+<select id="treatment">
+<option value="">Seleccionar tratamiento</option>
+<option>Resina</option>
+<option>Ionómero de vidrio</option>
+<option>Sellador de fosetas y fisuras</option>
+<option>Pulpotomía</option>
+<option>Pulpectomía</option>
+<option>Tratamiento de conductos</option>
+<option>Extracción</option>
+<option>Corona</option>
+<option>Profilaxis</option>
+<option>Aplicación de flúor</option>
+<option>Prótesis</option>
+<option>Sin tratamiento indicado</option>
+</select>
+
+<label class="label">Estado del tratamiento</label>
+<select id="status">
+<option>Pendiente</option>
+<option>En proceso</option>
+<option>Terminado</option>
+</select>
+
+<label class="label">Observaciones</label>
+<textarea id="notes" rows="3" placeholder="Escribe observaciones clínicas..."></textarea>
+
+<button id="addRecord" type="button">Agregar registro</button>
+</section>
+
+<section>
+<h2>4. Resumen clínico</h2>
+
+<div id="records">
+<p>No hay registros todavía.</p>
+</div>
+
+<button id="print" type="button">Imprimir / Guardar PDF</button>
+<button id="clear" class="danger" type="button">Limpiar registros</button>
+
+</section>
+
+</div>
+
+<script>
+const permanent = {
+ upper: [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28],
+ lower: [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38]
+};
+
+const temporary = {
+ upper: [55,54,53,52,51,61,62,63,64,65],
+ lower: [85,84,83,82,81,71,72,73,74,75]
+};
+
+let selected = null;
+let records = [];
+
+const upper = document.getElementById("upper");
+const lower = document.getElementById("lower");
+
+function drawTeeth() {
+  upper.innerHTML = "";
+  lower.innerHTML = "";
+  selected = null;
+
+  document.getElementById("selectedTooth").textContent =
+    "Ningún diente seleccionado";
+
+  const type = document.getElementById("dentition").value;
+  const data = type === "permanent" ? permanent : temporary;
+
+  function createTooth(number, container) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tooth";
+    button.textContent = number;
+    button.setAttribute("aria-label", "Seleccionar diente " + number);
+
+    button.addEventListener("click", () => {
+      document.querySelectorAll(".tooth").forEach(t =>
+        t.classList.remove("selected")
+      );
+
+      button.classList.add("selected");
+      selected = number;
+
+      document.getElementById("selectedTooth").textContent =
+        "Diente seleccionado: " + number;
+    });
+
+    container.appendChild(button);
+  }
+
+  data.upper.forEach(n => createTooth(n, upper));
+  data.lower.forEach(n => createTooth(n, lower));
+}
+
+document.getElementById("dentition").addEventListener("change", drawTeeth);
+
+document.getElementById("date").value =
+  new Date().toLocaleDateString("en-CA");
+
+function addRecord() {
+  if (!selected) {
+    alert("Primero selecciona un diente.");
+    return;
+  }
+
+  const diagnosis = document.getElementById("diagnosis").value;
+
+  if (!diagnosis) {
+    alert("Selecciona un diagnóstico.");
+    return;
+  }
+
+  const surfaces = [...document.querySelectorAll(
+    'input[name="surface"]:checked'
+  )].map(x => x.value);
+
+  const record = {
+    patient: document.getElementById("patient").value,
+    number: document.getElementById("recordNumber").value,
+    date: document.getElementById("date").value,
+    tooth: selected,
+    surfaces: surfaces,
+    diagnosis: diagnosis,
+    treatment: document.getElementById("treatment").value || "No especificado",
+    status: document.getElementById("status").value,
+    notes: document.getElementById("notes").value
+  };
+
+  records.push(record);
+  renderRecords();
+
+  document.getElementById("diagnosis").value = "";
+  document.getElementById("treatment").value = "";
+  document.getElementById("notes").value = "";
+  document.querySelectorAll('input[name="surface"]').forEach(x => x.checked = false);
+}
+
+function renderRecords() {
+  const container = document.getElementById("records");
+  container.innerHTML = "";
+
+  if (records.length === 0) {
+    container.textContent = "No hay registros todavía.";
+    return;
+  }
+
+  records.forEach((r, index) => {
+    const div = document.createElement("div");
+    div.className = "record";
+
+    const title = document.createElement("strong");
+    title.textContent = "Diente " + r.tooth + " - " + r.diagnosis;
+    div.appendChild(title);
+
+    const details = document.createElement("p");
+    details.textContent =
+      "Superficies: " + (r.surfaces.join(", ") || "No especificadas") +
+      " | Tratamiento: " + r.treatment +
+      " | Estado: " + r.status +
+      " | Fecha: " + r.date;
+    div.appendChild(details);
+
+    const notes = document.createElement("p");
+    notes.textContent = "Observaciones: " + (r.notes || "Ninguna");
+    div.appendChild(notes);
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "danger";
+    remove.textContent = "Eliminar registro";
+    remove.addEventListener("click", () => {
+      records.splice(index, 1);
+      renderRecords();
+    });
+
+    div.appendChild(remove);
+    container.appendChild(div);
+  });
+}
+
+document.getElementById("addRecord").addEventListener("click", addRecord);
+
+document.getElementById("clear").addEventListener("click", () => {
+  if (confirm("¿Deseas eliminar todos los registros de esta sesión?")) {
+    records = [];
+    renderRecords();
+  }
+});
+
+document.getElementById("print").addEventListener("click", () => {
+  window.print();
+});
+
+drawTeeth();
+</script>
+
+</body>
+</html>
