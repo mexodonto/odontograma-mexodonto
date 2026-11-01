@@ -17,7 +17,7 @@ textarea{min-height:65px;resize:vertical}.field{margin-bottom:14px}.grid{display
 button{border:none;border-radius:8px;padding:11px 16px;font-size:14px;font-weight:bold;cursor:pointer;min-height:42px}
 .primary-button{background:var(--primary);color:white}.primary-button:hover{background:var(--primary-dark)}
 .secondary-button{background:#e8f1f5;color:var(--primary-dark)}.danger-button{background:#fde8e8;color:#a32626}
-.button-row{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}.hint{font-size:13px;color:var(--muted);line-height:1.5}
+.link-button{background:transparent;color:var(--primary);border:0;padding:4px 0;text-decoration:underline;font-weight:600}.button-row{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}.hint{font-size:13px;color:var(--muted);line-height:1.5}
 .dentition-buttons{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}.dentition-buttons button.active{background:var(--primary);color:white}
 .arch-scroll{overflow-x:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch}.arch-title{text-align:center;font-weight:bold;color:var(--muted);margin:12px 0;font-size:13px}
 .arch{display:flex;align-items:flex-start;justify-content:center;gap:8px;width:max-content;min-width:100%;padding:10px 4px}
@@ -48,6 +48,11 @@ button{border:none;border-radius:8px;padding:11px 16px;font-size:14px;font-weigh
 <div class="field"><label for="authEmail">Correo electrónico</label><input id="authEmail" type="email" autocomplete="username" required></div>
 <div class="field"><label for="authPassword">Contraseña</label><input id="authPassword" type="password" autocomplete="current-password" required></div>
 <div class="button-row"><button class="primary-button" id="loginButton">Iniciar sesión</button><button class="secondary-button" id="signupButton">Crear cuenta</button></div>
+<div class="field" style="margin-top:10px"><button type="button" class="link-button" id="forgotPasswordButton">¿Olvidaste tu contraseña?</button></div>
+<div id="recoveryPanel" class="hidden">
+  <div class="field"><label for="newPassword">Nueva contraseña</label><input id="newPassword" type="password" autocomplete="new-password" minlength="8"></div>
+  <button type="button" class="primary-button" id="updatePasswordButton">Guardar nueva contraseña</button>
+</div>
 <div id="authMessage" class="status-message" aria-live="polite">Usa tu correo y contraseña para entrar.</div>
 </section>
 
@@ -142,8 +147,36 @@ async function showSession(session){
 async function initAuth(){
   const {data:{session}}=await db.auth.getSession();
   await showSession(session);
-  db.auth.onAuthStateChange((_event,session)=>{setTimeout(()=>showSession(session),0)});
+  db.auth.onAuthStateChange((event,session)=>{
+    if(event==="PASSWORD_RECOVERY"){
+      $("authCard").classList.remove("hidden");
+      $("app").classList.add("hidden");
+      $("recoveryPanel").classList.remove("hidden");
+      message("authMessage","Escribe tu nueva contraseña para recuperar el acceso.");
+      return;
+    }
+    setTimeout(()=>showSession(session),0);
+  });
 }
+$("forgotPasswordButton").addEventListener("click",async()=>{
+  const email=$("authEmail").value.trim();
+  if(!email)return message("authMessage","Primero escribe tu correo electrónico y después pulsa «¿Olvidaste tu contraseña?». ",true);
+  message("authMessage","Enviando enlace de recuperación…");
+  const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+  if(error)return message("authMessage","No se pudo enviar el correo: "+error.message,true);
+  message("authMessage","Si el correo está registrado, recibirás un enlace para restablecer tu contraseña. Revisa también la carpeta de correo no deseado.");
+});
+$("updatePasswordButton").addEventListener("click",async()=>{
+  const password=$("newPassword").value;
+  if(password.length<8)return message("authMessage","La nueva contraseña debe tener al menos 8 caracteres.",true);
+  message("authMessage","Actualizando contraseña…");
+  const {error}=await db.auth.updateUser({password});
+  if(error)return message("authMessage","No se pudo actualizar la contraseña: "+error.message,true);
+  $("recoveryPanel").classList.add("hidden");
+  $("newPassword").value="";
+  message("authMessage","Contraseña actualizada. Ya puedes iniciar sesión con tu nueva contraseña.");
+  await db.auth.signOut();
+});
 $("loginButton").addEventListener("click",async()=>{
   const email=$("authEmail").value.trim(),password=$("authPassword").value;
   if(!email||!password)return message("authMessage","Escribe tu correo y contraseña.",true);
@@ -174,13 +207,13 @@ $("refreshPatients").addEventListener("click",loadPatients);
 $("newPatientButton").addEventListener("click",()=>{
   currentPatientId=null;currentOdontogramId=null;$("patientPicker").value="";
   $("patientName").value="";$("patientFile").value="";$("patientDate").value=localDate();
-  savedRecords=[];pendingRecords=[];selectedTeeth=[];renderSavedRecords();renderIndividualRecords();updateSelection();
+  savedRecords=[];pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;renderSavedRecords();renderIndividualRecords();updateSelection();
   message("patientMessage","Paciente nuevo. Escribe su nombre y prepara el odontograma.");
 });
 $("patientPicker").addEventListener("change",async()=>{
   const id=$("patientPicker").value;
   if(!id)return;
-  currentPatientId=id;
+  currentPatientId=id;pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;renderIndividualRecords();updateSelection();
   const patient=patients.find(p=>p.id===id);
   $("patientName").value=patient?.nombre_completo||"";
   $("patientFile").value="";
@@ -191,7 +224,7 @@ async function loadOdontogram(){
   const {data,error}=await db.from("Odontogramas").select("id,datos,created_at").eq("paciente_id",currentPatientId).order("created_at",{ascending:false}).limit(1).maybeSingle();
   if(error){message("patientMessage","Error al abrir el odontograma: "+error.message,true);return}
   currentOdontogramId=data?.id||null;
-  savedRecords=Array.isArray(data?.datos?.records)?data.datos.records:[];
+  savedRecords=Array.isArray(data?.datos?.records)?data.datos.records:[];pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;renderIndividualRecords();updateSelection();
   if(data?.datos?.date)$("patientDate").value=data.datos.date;
   if(data?.datos?.file)$("patientFile").value=data.datos.file;
   renderSavedRecords();
@@ -237,9 +270,29 @@ function renderSavedRecords(){
   const div=document.createElement("div");div.className="record";
   const rows=[["Dentición",r.dentition==="temporary"?"Temporal":"Permanente"],["Diente",r.tooth],["Diagnóstico",r.diagnosis||"Sin especificar"],["Tratamiento",r.treatment||"Sin especificar"],["Estado",r.status||"Sin especificar"],["Superficies",(r.surfaces||[]).join(", ")||"Sin especificar"],["Observaciones",r.notes||"Sin observaciones"]];
   div.innerHTML=rows.map(([k,v])=>`<strong>${k}:</strong> ${escapeHTML(v)}<br>`).join("");
-  c.appendChild(div);
+  const actions=document.createElement("div");actions.className="button-row no-print";
+  const edit=document.createElement("button");edit.type="button";edit.className="secondary-button";edit.textContent="Editar registro";
+  edit.addEventListener("click",()=>editSavedRecord(savedRecords.indexOf(r)));
+  actions.appendChild(edit);div.appendChild(actions);c.appendChild(div);
  });
 }
+
+function editSavedRecord(index){
+ if(index<0||index>=savedRecords.length)return;
+ const original=savedRecords[index];
+ editingRecordIndex=index;
+ currentDentition=original.dentition||"permanent";
+ $("permanentButton").classList.toggle("active",currentDentition==="permanent");
+ $("temporaryButton").classList.toggle("active",currentDentition==="temporary");
+ $("permanentButton").classList.toggle("secondary-button",currentDentition!=="permanent");
+ $("temporaryButton").classList.toggle("secondary-button",currentDentition!=="temporary");
+ pendingRecords=[{...original,surfaces:[...(original.surfaces||[])]}];
+ renderIndividualRecords();
+ message("patientMessage",`Editando el registro del diente ${original.tooth}. Realiza los cambios y pulsa «Guardar cambios».`);
+ const saveButton=$("saveButton");saveButton.textContent="Guardar cambios";
+ $("individualRecords").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
 async function saveRecords(){
  if(!pendingRecords.length)return alert("Primero prepara los registros de los dientes seleccionados.");
  const patient=$("patientName").value.trim(),date=$("patientDate").value,file=$("patientFile").value.trim();
@@ -254,8 +307,11 @@ async function saveRecords(){
  }
  const {data:patientData,error:patientError}=await db.from("Pacientes").select("id,nombre_completo").eq("id",currentPatientId).single();
  if(patientError||!patientData){message("patientMessage","No se pudo verificar el paciente. "+(patientError?.message||""),true);return}
+ const isEditing=editingRecordIndex!==null;
+ const originalBeforeEdit=isEditing?{...savedRecords[editingRecordIndex],surfaces:[...(savedRecords[editingRecordIndex].surfaces||[])]}:null;
  const additions=pendingRecords.map(r=>({...r,dentition:currentDentition}));
- savedRecords=[...savedRecords,...additions];
+ if(isEditing)savedRecords[editingRecordIndex]=additions[0];
+ else savedRecords=[...savedRecords,...additions];
  const payload={date,file,records:savedRecords};
  let result;
  if(currentOdontogramId){
@@ -264,8 +320,8 @@ async function saveRecords(){
   result=await db.from("Odontogramas").insert({paciente_id:currentPatientId,datos:payload}).select("id").single();
   if(!result.error)currentOdontogramId=result.data.id;
  }
- if(result.error){savedRecords.splice(savedRecords.length-additions.length,additions.length);message("patientMessage","No se pudo guardar el odontograma: "+result.error.message,true);return}
- pendingRecords=[];selectedTeeth=[];renderIndividualRecords();renderSavedRecords();drawTeeth();
+ if(result.error){if(isEditing){savedRecords[editingRecordIndex]=originalBeforeEdit}else{savedRecords.splice(savedRecords.length-additions.length,additions.length)}message("patientMessage","No se pudo guardar el odontograma: "+result.error.message,true);return}
+ pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;renderIndividualRecords();renderSavedRecords();drawTeeth();$("saveButton").textContent="Guardar en Supabase";
  $("generalDiagnosis").value="";$("generalTreatment").value="";$("generalStatus").value="";$("generalNotes").value="";
  await loadPatients();$("patientPicker").value=currentPatientId;
  message("patientMessage","Odontograma guardado correctamente en tu cuenta.");
