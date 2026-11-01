@@ -54,7 +54,8 @@ button {
   font-size: 14px;
 }
 
-button:focus-visible, input:focus-visible, select:focus-visible {
+button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible {
   outline: 3px solid #f0b44b;
   outline-offset: 2px;
 }
@@ -64,46 +65,46 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
-  margin: 15px 0;
+  margin: 28px 0 20px;
 }
 
-/* Diseño visual y de cuadrícula de las piezas dentales unificado */
 .tooth {
   position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: 16px 16px 16px;
+  grid-template-rows: 13px 13px 13px;
   gap: 2px;
   width: 58px;
   height: 58px;
   padding: 4px;
+  box-sizing: border-box;
   background: #fffdf5;
   color: #243e70;
   border: 2px solid #c5bda9;
   border-radius: 12px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.12);
   transition: transform 0.2s;
-  cursor: pointer;
 }
 
 .tooth:hover {
   background: #e8f1ff;
-  transform: scale(1.08);
+  transform: scale(1.05);
 }
 
 .tooth.selected {
-  background: #315b9a;
-  color: white;
-  border-color: #243e70;
+  background: #e8f1ff;
+  border: 2px solid #315b9a;
 }
 
 .tooth-number {
   position: absolute;
-  top: -19px;
+  top: -20px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: bold;
+  white-space: nowrap;
+  color: #243e70;
 }
 
 .tooth-surface {
@@ -115,7 +116,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   border: 1px solid #c5bda9;
   border-radius: 4px;
   background: #fff;
+  color: #243e70;
   cursor: pointer;
+  padding: 0;
+  margin: 0;
 }
 
 .vestibular {
@@ -203,9 +207,44 @@ small {
 }
 
 @media (max-width: 400px) {
+  .dentition {
+    gap: 7px;
+  }
+
   .tooth {
-    width: 45px;
-    height: 45px;
+    width: 48px;
+    height: 52px;
+    grid-template-rows: 11px 11px 11px;
+    padding: 3px;
+  }
+
+  .tooth-surface {
+    font-size: 8px;
+  }
+
+  .tooth-number {
+    font-size: 9px;
+    top: -18px;
+  }
+}
+
+@media print {
+  body {
+    background: white;
+    padding: 0;
+  }
+
+  section {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+
+  button {
+    display: none;
+  }
+
+  input, select, textarea {
+    border: none;
   }
 }
 </style>
@@ -249,7 +288,10 @@ small {
 <p><strong>Arcada inferior</strong></p>
 <div class="dentition" id="lower"></div>
 
-<p><small>Selecciona una pieza dental para registrar su diagnóstico.</small></p>
+<p><small>
+Selecciona una pieza dental y después marca las superficies.
+</small></p>
+
 <p id="selectedTooth">Ningún diente seleccionado</p>
 </section>
 
@@ -310,7 +352,8 @@ small {
 </select>
 
 <label class="label">Observaciones</label>
-<textarea id="notes" rows="3" placeholder="Escribe observaciones clínicas..."></textarea>
+<textarea id="notes" rows="3"
+placeholder="Escribe observaciones clínicas..."></textarea>
 
 <button id="addRecord" type="button">Agregar registro</button>
 </section>
@@ -331,81 +374,208 @@ small {
 
 <script>
 const permanent = {
- upper: [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28],
- lower: [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38]
+  upper: [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28],
+  lower: [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38]
 };
 
 const temporary = {
- upper: [55,54,53,52,51,61,62,63,64,65],
- lower: [85,84,83,82,81,71,72,73,74,75]
+  upper: [55,54,53,52,51,61,62,63,64,65],
+  lower: [85,84,83,82,81,71,72,73,74,75]
 };
+
+const surfaceNames = [
+  "Oclusal",
+  "Mesial",
+  "Distal",
+  "Vestibular",
+  "Lingual/Palatina"
+];
 
 let selected = null;
 let records = [];
 
+/* Guarda las superficies de cada diente por separado */
+const surfaceState = {
+  permanent: {},
+  temporary: {}
+};
+
 const upper = document.getElementById("upper");
 const lower = document.getElementById("lower");
 
+const dentitionSelect = document.getElementById("dentition");
+
+function getCurrentDentition() {
+  return dentitionSelect.value;
+}
+
+function getCurrentSurfaces() {
+  const type = getCurrentDentition();
+
+  if (!surfaceState[type][selected]) {
+    surfaceState[type][selected] = [];
+  }
+
+  return surfaceState[type][selected];
+}
+
+/* Actualiza las casillas del formulario */
+function updateSurfaceCheckboxes() {
+  const checkboxes = document.querySelectorAll(
+    'input[name="surface"]'
+  );
+
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = selected !== null &&
+      getCurrentSurfaces().includes(checkbox.value);
+  });
+}
+
+/* Actualiza los colores de las superficies del diente */
+function updateToothSurfaces() {
+  document.querySelectorAll(".tooth").forEach(button => {
+    const number = Number(button.dataset.number);
+
+    const surfaces = surfaceState[getCurrentDentition()][number] || [];
+
+    button.querySelectorAll(".tooth-surface").forEach(surface => {
+      surface.classList.toggle(
+        "surface-selected",
+        surfaces.includes(surface.dataset.surface)
+      );
+    });
+  });
+}
+
+/* Selecciona una pieza dental */
+function selectTooth(number, button) {
+  document.querySelectorAll(".tooth").forEach(tooth => {
+    tooth.classList.remove("selected");
+  });
+
+  button.classList.add("selected");
+
+  selected = number;
+
+  document.getElementById("selectedTooth").textContent =
+    "Diente seleccionado: " + number;
+
+  updateSurfaceCheckboxes();
+}
+
+/* Dibuja las piezas dentales */
 function drawTeeth() {
   upper.innerHTML = "";
   lower.innerHTML = "";
+
   selected = null;
 
   document.getElementById("selectedTooth").textContent =
     "Ningún diente seleccionado";
 
-  const type = document.getElementById("dentition").value;
+  document.querySelectorAll('input[name="surface"]').forEach(x => {
+    x.checked = false;
+  });
+
+  const type = getCurrentDentition();
+
   const data = type === "permanent" ? permanent : temporary;
 
   function createTooth(number, container) {
     const button = document.createElement("button");
+
     button.type = "button";
     button.className = "tooth";
-    button.setAttribute("aria-label", "Seleccionar diente " + number);
+    button.dataset.number = number;
+
+    button.setAttribute(
+      "aria-label",
+      "Seleccionar diente " + number
+    );
 
     button.innerHTML = `
       <span class="tooth-number">${number}</span>
-      <span class="tooth-surface vestibular" data-surface="Vestibular">V</span>
-      <span class="tooth-surface mesial" data-surface="Mesial">M</span>
-      <span class="tooth-surface occlusal" data-surface="Oclusal">O</span>
-      <span class="tooth-surface distal" data-surface="Distal">D</span>
-      <span class="tooth-surface lingual" data-surface="Lingual/Palatina">L/P</span>
+      <span class="tooth-surface vestibular"
+        data-surface="Vestibular">V</span>
+      <span class="tooth-surface mesial"
+        data-surface="Mesial">M</span>
+      <span class="tooth-surface occlusal"
+        data-surface="Oclusal">O</span>
+      <span class="tooth-surface distal"
+        data-surface="Distal">D</span>
+      <span class="tooth-surface lingual"
+        data-surface="Lingual/Palatina">L/P</span>
     `;
 
     button.addEventListener("click", () => {
-      document.querySelectorAll(".tooth").forEach(t =>
-        t.classList.remove("selected")
-      );
-
-      button.classList.add("selected");
-      selected = number;
-
-      document.getElementById("selectedTooth").textContent =
-        "Diente seleccionado: " + number;
+      selectTooth(number, button);
     });
 
     button.querySelectorAll(".tooth-surface").forEach(surface => {
       surface.addEventListener("click", event => {
         event.stopPropagation();
-        button.click();
-        surface.classList.toggle("surface-selected");
+
+        selectTooth(number, button);
+
+        const name = surface.dataset.surface;
+        const surfaces = getCurrentSurfaces();
+
+        if (surfaces.includes(name)) {
+          surfaceState[type][number] =
+            surfaces.filter(item => item !== name);
+        } else {
+          surfaces.push(name);
+        }
+
+        updateToothSurfaces();
+        updateSurfaceCheckboxes();
       });
     });
 
     container.appendChild(button);
   }
 
-  data.upper.forEach(n => createTooth(n, upper));
-  data.lower.forEach(n => createTooth(n, lower));
+  data.upper.forEach(number => createTooth(number, upper));
+  data.lower.forEach(number => createTooth(number, lower));
+
+  updateToothSurfaces();
 }
 
-document.getElementById("dentition").addEventListener("change", drawTeeth);
+/* Cambiar entre dentición permanente y temporal */
+dentitionSelect.addEventListener("change", drawTeeth);
 
+/* Sincroniza las casillas con el dibujo */
+document.querySelectorAll('input[name="surface"]').forEach(checkbox => {
+  checkbox.addEventListener("change", () => {
+    if (selected === null) {
+      checkbox.checked = false;
+      alert("Primero selecciona un diente.");
+      return;
+    }
+
+    const type = getCurrentDentition();
+    const surfaces = getCurrentSurfaces();
+
+    if (checkbox.checked) {
+      if (!surfaces.includes(checkbox.value)) {
+        surfaces.push(checkbox.value);
+      }
+    } else {
+      surfaceState[type][selected] =
+        surfaces.filter(item => item !== checkbox.value);
+    }
+
+    updateToothSurfaces();
+  });
+});
+
+/* Coloca la fecha actual */
 document.getElementById("date").value =
   new Date().toLocaleDateString("en-CA");
 
+/* Agrega un registro clínico */
 function addRecord() {
-  if (!selected) {
+  if (selected === null) {
     alert("Primero selecciona un diente.");
     return;
   }
@@ -417,14 +587,13 @@ function addRecord() {
     return;
   }
 
-  const surfaces = [...document.querySelectorAll(
-    'input[name="surface"]:checked'
-  )].map(x => x.value);
+  const surfaces = [...getCurrentSurfaces()];
 
   const record = {
     patient: document.getElementById("patient").value,
     number: document.getElementById("recordNumber").value,
     date: document.getElementById("date").value,
+    dentition: getCurrentDentition(),
     tooth: selected,
     surfaces: surfaces,
     diagnosis: diagnosis,
@@ -434,16 +603,17 @@ function addRecord() {
   };
 
   records.push(record);
+
   renderRecords();
 
   document.getElementById("diagnosis").value = "";
   document.getElementById("treatment").value = "";
   document.getElementById("notes").value = "";
-  document.querySelectorAll('input[name="surface"]').forEach(x => x.checked = false);
 }
 
 function renderRecords() {
   const container = document.getElementById("records");
+
   container.innerHTML = "";
 
   if (records.length === 0) {
@@ -451,42 +621,69 @@ function renderRecords() {
     return;
   }
 
-  records.forEach((r, index) => {
+  records.forEach((record, index) => {
     const div = document.createElement("div");
+
     div.className = "record";
 
     const title = document.createElement("strong");
-    title.textContent = "Diente " + r.tooth + " - " + r.diagnosis;
+
+    title.textContent =
+      "Diente " + record.tooth + " - " + record.diagnosis;
+
     div.appendChild(title);
 
     const details = document.createElement("p");
+
     details.textContent =
-      "Superficies: " + (r.surfaces.join(", ") || "No especificadas") +
-      " | Tratamiento: " + r.treatment +
-      " | Estado: " + r.status +
-      " | Fecha: " + r.date;
+      "Dentición: " +
+      (record.dentition === "permanent" ? "Permanente" : "Temporal") +
+      " | Superficies: " +
+      (record.surfaces.join(", ") || "No especificadas") +
+      " | Tratamiento: " + record.treatment +
+      " | Estado: " + record.status +
+      " | Fecha: " + record.date;
+
     div.appendChild(details);
 
+    const patient = document.createElement("p");
+
+    patient.textContent =
+      "Paciente: " + (record.patient || "No especificado") +
+      " | Expediente: " + (record.number || "No especificado");
+
+    div.appendChild(patient);
+
     const notes = document.createElement("p");
-    notes.textContent = "Observaciones: " + (r.notes || "Ninguna");
+
+    notes.textContent =
+      "Observaciones: " + (record.notes || "Ninguna");
+
     div.appendChild(notes);
 
     const remove = document.createElement("button");
+
     remove.type = "button";
     remove.className = "danger";
     remove.textContent = "Eliminar registro";
+
     remove.addEventListener("click", () => {
       records.splice(index, 1);
       renderRecords();
     });
 
     div.appendChild(remove);
+
     container.appendChild(div);
   });
 }
 
-document.getElementById("addRecord").addEventListener("click", addRecord);
+document.getElementById("addRecord").addEventListener(
+  "click",
+  addRecord
+);
 
+/* Eliminar todos los registros */
 document.getElementById("clear").addEventListener("click", () => {
   if (confirm("¿Deseas eliminar todos los registros de esta sesión?")) {
     records = [];
@@ -494,11 +691,14 @@ document.getElementById("clear").addEventListener("click", () => {
   }
 });
 
+/* Imprimir o guardar como PDF */
 document.getElementById("print").addEventListener("click", () => {
   window.print();
 });
 
+/* Iniciar odontograma */
 drawTeeth();
+
 </script>
 
 </body>
