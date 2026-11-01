@@ -6,109 +6,187 @@
 <title>Odontograma Mexodonto</title>
 
 <style>
+:root {
+  --primary: #176b87;
+  --primary-dark: #10536b;
+  --background: #f3f7fa;
+  --border: #dce5eb;
+  --text: #243746;
+  --muted: #647786;
+  --selected: #d7eff8;
+}
+
 * {
   box-sizing: border-box;
 }
 
 body {
-  font-family: Arial, sans-serif;
-  background: #f3f6fa;
   margin: 0;
-  padding: 15px;
-  color: #263445;
+  padding: 18px;
+  font-family: Arial, sans-serif;
+  background: var(--background);
+  color: var(--text);
 }
 
 .container {
-  max-width: 1000px;
+  max-width: 1100px;
   margin: auto;
 }
 
 header {
-  background: #243e70;
-  color: white;
-  padding: 22px;
-  border-radius: 12px;
   text-align: center;
+  margin-bottom: 22px;
 }
 
-section {
+header h1 {
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+header p {
+  color: var(--muted);
+  margin-top: 0;
+}
+
+.card {
   background: white;
-  padding: 18px;
-  margin-top: 18px;
-  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 18px;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+}
+
+h2 {
+  color: var(--primary);
+  font-size: 19px;
+  margin-top: 0;
+}
+
+h3 {
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+label {
+  display: block;
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 6px;
 }
 
 input, select, textarea {
   width: 100%;
-  padding: 12px;
-  margin: 7px 0 14px;
-  border: 1px solid #ccd3df;
-  border-radius: 7px;
-  font-size: 16px;
+  padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  color: var(--text);
+}
+
+textarea {
+  min-height: 65px;
+  resize: vertical;
+}
+
+.field {
+  margin-bottom: 14px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
 
 button {
-  cursor: pointer;
-  padding: 11px 14px;
   border: none;
-  border-radius: 7px;
-  background: #315b9a;
-  color: white;
+  border-radius: 8px;
+  padding: 11px 16px;
   font-size: 14px;
-}
-
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: 3px solid #f0b44b;
-  outline-offset: 2px;
-}
-
-h2 {
-  color: #243e70;
-}
-
-.label {
   font-weight: bold;
+  cursor: pointer;
+}
+
+.primary-button {
+  background: var(--primary);
+  color: white;
+}
+
+.primary-button:hover {
+  background: var(--primary-dark);
+}
+
+.secondary-button {
+  background: #e8f1f5;
+  color: var(--primary-dark);
+}
+
+.danger-button {
+  background: #fde8e8;
+  color: #a32626;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
   margin-top: 12px;
-  display: block;
 }
 
-small {
-  color: #66758b;
+.hint {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
-/* ODONTOGRAMA */
+.dentition-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.dentition-buttons button.active {
+  background: var(--primary);
+  color: white;
+}
+
+.arch-scroll {
+  overflow-x: auto;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.arch-title {
+  text-align: center;
+  font-weight: bold;
+  color: var(--muted);
+  margin: 12px 0;
+  font-size: 13px;
+}
 
 .arch {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 25px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  width: max-content;
+  min-width: 100%;
+  padding: 10px 4px;
 }
 
 .quadrant {
-  min-width: 0;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  gap: 4px;
 }
 
-.quadrant-title {
-  font-size: 12px;
-  color: #66758b;
-  margin-bottom: 10px;
-  font-weight: bold;
-}
-
-.teeth {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 10px 5px;
-  width: 100%;
-  padding: 8px 3px;
+.midline {
+  width: 2px;
+  min-height: 70px;
+  background: #cbd8e0;
+  align-self: stretch;
+  margin: 0 3px;
 }
 
 .tooth-item {
@@ -116,213 +194,124 @@ small {
   flex-direction: column;
   align-items: center;
   gap: 5px;
-  width: 54px;
+  width: 40px;
+  flex: 0 0 40px;
 }
 
 .tooth {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  gap: 2px;
-  width: 45px;
-  height: 45px;
-  padding: 4px;
-  border: 2px solid #b9c3d0;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  background: #fffdf5;
-  box-shadow: 0 2px 4px rgba(0,0,0,.10);
+  border: 2px solid #8da2af;
+  background: white;
+  padding: 0;
+  transition: .15s;
+}
+
+.tooth:hover {
+  border-color: var(--primary);
 }
 
 .tooth.selected {
-  border: 3px solid #315b9a;
-  background: #e8f1ff;
-}
-
-.tooth-surface {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  margin: 0;
-  border: 1px solid #c5bda9;
-  border-radius: 50%;
-  background: white;
-  color: #243e70;
-  font-size: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  min-width: 0;
-}
-
-.tooth-surface.surface-selected {
-  background: #315b9a;
-  color: white;
-  border-color: #243e70;
-}
-
-.vestibular {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.mesial {
-  grid-column: 1;
-  grid-row: 2;
-}
-
-.occlusal {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-.distal {
-  grid-column: 3;
-  grid-row: 2;
-}
-
-.lingual {
-  grid-column: 2;
-  grid-row: 3;
+  background: var(--selected);
+  border: 3px solid var(--primary);
 }
 
 .tooth-number {
   font-size: 12px;
-  font-weight: bold;
-  color: #243e70;
-  text-align: center;
-  line-height: 15px;
+  color: var(--text);
 }
 
-/* LÍNEA MEDIA */
-
-.midline {
-  width: 2px;
-  background: #d1d9e5;
-  margin: 0 auto;
-  grid-column: 1 / -1;
-  height: 5px;
+.selection-info {
+  background: #edf7fa;
+  color: var(--primary-dark);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-top: 12px;
 }
-
-/* SUPERFICIES */
 
 .surface-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin: 10px 0 18px;
+  gap: 8px;
+  margin: 10px 0 15px;
 }
 
-.surface-options label {
+.surface-option {
   display: flex;
   align-items: center;
   gap: 5px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: normal;
+  margin: 0;
 }
 
-.surface-options input {
+.surface-option input {
   width: auto;
   margin: 0;
 }
 
-/* REGISTRO INDIVIDUAL */
-
-.individual-card {
-  background: #f1f5fa;
-  border: 1px solid #d5deea;
-  padding: 14px;
-  margin: 12px 0;
-  border-radius: 9px;
+.tooth-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 14px;
+  background: #fcfeff;
 }
 
-.individual-card h3 {
+.tooth-card h3 {
+  color: var(--primary);
   margin-top: 0;
-  color: #243e70;
 }
 
-.individual-card label {
-  font-weight: bold;
-  display: block;
+.record {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.record strong {
+  color: var(--primary-dark);
+}
+
+.empty {
+  color: var(--muted);
   font-size: 14px;
 }
 
-.individual-card input,
-.individual-card select,
-.individual-card textarea {
-  margin-bottom: 10px;
-}
-
-/* RESUMEN */
-
-.record {
-  border-left: 5px solid #315b9a;
-  padding: 12px;
-  margin: 10px 0;
-  background: #f1f5fa;
-  border-radius: 6px;
-  overflow-wrap: anywhere;
-}
-
-.record button {
-  margin: 5px 5px 0 0;
-}
-
-.danger {
-  background: #b43c3c;
-}
-
-.secondary {
-  background: #66758b;
-}
-
-.primary {
-  background: #243e70;
-}
-
-.selection-info {
-  background: #e8f1ff;
+.notice {
+  background: #fff8e7;
+  border: 1px solid #f1dfaa;
+  color: #70551a;
   padding: 12px;
   border-radius: 8px;
-  margin: 12px 0;
-  color: #243e70;
-  font-weight: bold;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 12px 0;
-}
-
-@media(max-width: 480px) {
+@media(max-width: 600px) {
   body {
-    padding: 8px;
+    padding: 10px;
   }
 
-  section {
-    padding: 12px;
+  .card {
+    padding: 14px;
   }
 
-  .teeth {
-    gap: 9px 2px;
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 0;
   }
 
-  .tooth-item {
-    width: 48px;
-  }
-
-  .tooth {
-    width: 39px;
-    height: 39px;
-    padding: 3px;
-  }
-
-  .tooth-surface {
-    font-size: 7px;
-  }
-
-  .tooth-number {
-    font-size: 11px;
+  .arch {
+    justify-content: flex-start;
   }
 }
 
@@ -332,16 +321,20 @@ small {
     padding: 0;
   }
 
-  section {
-    break-inside: avoid;
-  }
-
-  button {
+  .no-print,
+  button,
+  .dentition-buttons {
     display: none !important;
   }
 
-  input, select, textarea {
-    border: none;
+  .card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+    break-inside: avoid;
+  }
+
+  .container {
+    max-width: 100%;
   }
 }
 </style>
@@ -352,949 +345,611 @@ small {
 <div class="container">
 
 <header>
-<h1>🦷 MEXODONTO</h1>
-<p>Odontograma digital interactivo</p>
+  <h1>Odontograma Mexodonto</h1>
+  <p>Registro y seguimiento de tratamientos odontológicos</p>
 </header>
 
-<section>
+<section class="card">
+  <h2>1. Datos del paciente</h2>
 
-<h2>1. Datos del paciente</h2>
+  <div class="grid">
+    <div class="field">
+      <label for="patientName">Nombre del paciente</label>
+      <input id="patientName" type="text" placeholder="Nombre completo">
+    </div>
 
-<label class="label">Nombre del paciente</label>
-<input id="patient" type="text" placeholder="Nombre del paciente">
+    <div class="field">
+      <label for="patientDate">Fecha del registro</label>
+      <input id="patientDate" type="date">
+    </div>
+  </div>
 
-<label class="label">Número de expediente</label>
-<input id="recordNumber" type="text" placeholder="Número de expediente">
-
-<label class="label">Fecha de consulta</label>
-<input id="date" type="date">
-
+  <div class="field">
+    <label for="patientFile">Número de expediente (opcional)</label>
+    <input id="patientFile" type="text" placeholder="Número de expediente">
+  </div>
 </section>
 
-<section>
+<section class="card">
+  <h2>2. Seleccionar dentición</h2>
 
-<h2>2. Odontograma</h2>
+  <div class="dentition-buttons no-print">
+    <button id="permanentButton" class="active" onclick="changeDentition('permanent')">
+      Dentición permanente
+    </button>
 
-<label class="label">Seleccionar dentición</label>
+    <button id="temporaryButton" class="secondary-button" onclick="changeDentition('temporary')">
+      Dentición temporal
+    </button>
+  </div>
 
-<select id="dentition">
-<option value="permanent">Dentición permanente</option>
-<option value="temporary">Dentición temporal</option>
-</select>
+  <p class="hint">
+    Selecciona uno o varios dientes haciendo clic sobre sus círculos.
+    Puedes desplazarte horizontalmente para visualizar toda la arcada.
+  </p>
 
-<p><strong>Arcada superior</strong></p>
+  <div class="arch-title">ARCADA SUPERIOR</div>
+  <div class="arch-scroll">
+    <div id="upperArch" class="arch"></div>
+  </div>
 
-<div class="arch" id="upperArch"></div>
+  <div class="arch-title">ARCADA INFERIOR</div>
+  <div class="arch-scroll">
+    <div id="lowerArch" class="arch"></div>
+  </div>
 
-<p><strong>Arcada inferior</strong></p>
-
-<div class="arch" id="lowerArch"></div>
-
-<div class="selection-info" id="selectionInfo">
-Ningún diente seleccionado
-</div>
-
-<p><small>
-Toca el centro del diente para seleccionarlo.
-Puedes seleccionar varias piezas. Toca las letras para marcar superficies.
-</small></p>
-
-<div class="actions">
-<button type="button" id="clearSelection" class="secondary">
-Quitar selección de dientes
-</button>
-</div>
-
+  <div id="selectionInfo" class="selection-info">
+    No hay dientes seleccionados.
+  </div>
 </section>
 
-<section>
+<section class="card">
+  <h2>3. Información general</h2>
 
-<h2>3. Diagnóstico y tratamiento</h2>
+  <p class="hint">
+    Estos datos se aplicarán inicialmente a todos los dientes seleccionados.
+    Después podrás modificar cada uno individualmente. El diagnóstico es opcional.
+  </p>
 
-<p><strong>Aplicación conjunta</strong></p>
+  <div class="grid">
+    <div class="field">
+      <label for="generalDiagnosis">Diagnóstico (opcional)</label>
+      <select id="generalDiagnosis">
+        <option value="">Sin especificar</option>
+        <option value="Caries dental">Caries dental</option>
+        <option value="Caries recurrente">Caries recurrente</option>
+        <option value="Fractura dental">Fractura dental</option>
+        <option value="Desgaste dental">Desgaste dental</option>
+        <option value="Pulpitis reversible">Pulpitis reversible</option>
+        <option value="Pulpitis irreversible">Pulpitis irreversible</option>
+        <option value="Necrosis pulpar">Necrosis pulpar</option>
+        <option value="Periodontitis">Periodontitis</option>
+        <option value="Gingivitis">Gingivitis</option>
+        <option value="Ausencia dental">Ausencia dental</option>
+        <option value="Otro">Otro</option>
+      </select>
+    </div>
 
-<p><small>
-Selecciona varios dientes y configura un diagnóstico común.
-Después podrás modificar cada pieza individualmente.
-</small></p>
+    <div class="field">
+      <label for="generalTreatment">Tratamiento (opcional)</label>
+      <select id="generalTreatment">
+        <option value="">Sin especificar</option>
+        <option value="Resina">Resina</option>
+        <option value="Amalgama">Amalgama</option>
+        <option value="Ionómero de vidrio">Ionómero de vidrio</option>
+        <option value="Extracción">Extracción</option>
+        <option value="Endodoncia">Endodoncia</option>
+        <option value="Corona">Corona</option>
+        <option value="Profilaxis">Profilaxis</option>
+        <option value="Raspado y alisado radicular">Raspado y alisado radicular</option>
+        <option value="Sellador de fosetas y fisuras">Sellador de fosetas y fisuras</option>
+        <option value="Aplicación de flúor">Aplicación de flúor</option>
+        <option value="Otro">Otro</option>
+      </select>
+    </div>
+  </div>
 
-<label class="label">Superficies dentales</label>
+  <div class="field">
+    <label for="generalStatus">Estado del tratamiento (opcional)</label>
+    <select id="generalStatus">
+      <option value="">Sin especificar</option>
+      <option value="Pendiente">Pendiente</option>
+      <option value="En proceso">En proceso</option>
+      <option value="Realizado">Realizado</option>
+      <option value="En observación">En observación</option>
+      <option value="No requiere tratamiento">No requiere tratamiento</option>
+    </select>
+  </div>
 
-<div class="surface-options">
+  <div class="field">
+    <label for="generalNotes">Observaciones generales</label>
+    <textarea id="generalNotes" placeholder="Escribe observaciones generales si es necesario"></textarea>
+  </div>
 
-<label>
-<input type="checkbox" name="surface" value="Oclusal">
-Oclusal
-</label>
-
-<label>
-<input type="checkbox" name="surface" value="Mesial">
-Mesial
-</label>
-
-<label>
-<input type="checkbox" name="surface" value="Distal">
-Distal
-</label>
-
-<label>
-<input type="checkbox" name="surface" value="Vestibular">
-Vestibular
-</label>
-
-<label>
-<input type="checkbox" name="surface" value="Lingual/Palatina">
-Lingual/Palatina
-</label>
-
-</div>
-
-<label class="label">Diagnóstico general</label>
-
-<select id="diagnosis">
-<option value="">Seleccionar diagnóstico</option>
-<option>Caries</option>
-<option>Caries recurrente</option>
-<option>Restauración existente</option>
-<option>Restauración defectuosa</option>
-<option>Fractura dental</option>
-<option>Ausencia dental</option>
-<option>Diente retenido</option>
-<option>Movilidad dental</option>
-<option>Desgaste dental</option>
-<option>Lesión periapical</option>
-<option>Tratamiento endodóntico</option>
-<option>Corona existente</option>
-<option>Extracción indicada</option>
-<option>Sin alteraciones clínicas registradas</option>
-</select>
-
-<label class="label">Tratamiento general</label>
-
-<select id="treatment">
-<option value="">Seleccionar tratamiento</option>
-<option>Resina</option>
-<option>Ionómero de vidrio</option>
-<option>Sellador de fosetas y fisuras</option>
-<option>Pulpotomía</option>
-<option>Pulpectomía</option>
-<option>Tratamiento de conductos</option>
-<option>Extracción</option>
-<option>Corona</option>
-<option>Profilaxis</option>
-<option>Aplicación de flúor</option>
-<option>Prótesis</option>
-<option>Sin tratamiento indicado</option>
-</select>
-
-<label class="label">Estado general</label>
-
-<select id="status">
-<option>Pendiente</option>
-<option>En proceso</option>
-<option>Terminado</option>
-</select>
-
-<label class="label">Observaciones generales</label>
-
-<textarea id="notes" rows="3"
-placeholder="Observaciones clínicas..."></textarea>
-
-<button type="button" id="prepareRecords">
-Preparar registros de dientes seleccionados
-</button>
-
-<div id="individualRecords"></div>
-
-<button type="button" id="saveRecords">
-Guardar todos los registros
-</button>
-
+  <div class="button-row no-print">
+    <button class="primary-button" onclick="prepareRecords()">
+      Preparar registros de dientes seleccionados
+    </button>
+  </div>
 </section>
 
-<section>
+<section class="card">
+  <h2>4. Personalizar cada diente</h2>
 
-<h2>4. Resumen clínico</h2>
+  <p class="hint">
+    Aquí puedes modificar individualmente el diagnóstico, tratamiento,
+    estado, superficies afectadas y observaciones de cada diente.
+  </p>
 
-<div id="records">
-<p>No hay registros todavía.</p>
-</div>
+  <div id="individualRecords">
+    <p class="empty">Primero selecciona uno o varios dientes y prepara sus registros.</p>
+  </div>
 
-<button type="button" id="print">
-Imprimir / Guardar PDF
-</button>
-
-<button type="button" id="clear" class="danger">
-Limpiar registros
-</button>
-
+  <div class="button-row no-print">
+    <button class="primary-button" onclick="saveRecords()">
+      Guardar registros
+    </button>
+  </div>
 </section>
+
+<section class="card">
+  <h2>5. Registros guardados</h2>
+
+  <div class="button-row no-print">
+    <button class="secondary-button" onclick="window.print()">
+      Imprimir / Guardar PDF
+    </button>
+
+    <button class="danger-button" onclick="clearRecords()">
+      Limpiar registros
+    </button>
+  </div>
+
+  <div id="savedRecords">
+    <p class="empty">Todavía no hay registros guardados.</p>
+  </div>
+</section>
+
+<div class="notice">
+  <strong>Importante:</strong> esta versión conserva los registros únicamente
+  mientras la página permanece abierta. Al recargarla o cerrarla, los datos
+  pueden perderse. No utilices información clínica identificable de pacientes
+  reales hasta implementar almacenamiento seguro, control de acceso y medidas
+  de protección de datos.
+</div>
 
 </div>
 
 <script>
-
 const permanent = {
- upper: [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28],
- lower: [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38]
+  upper: [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28],
+  lower: [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38]
 };
 
 const temporary = {
- upper: [55,54,53,52,51,61,62,63,64,65],
- lower: [85,84,83,82,81,71,72,73,74,75]
+  upper: [55,54,53,52,51,61,62,63,64,65],
+  lower: [85,84,83,82,81,71,72,73,74,75]
 };
 
+const surfaces = [
+  "Oclusal",
+  "Mesial",
+  "Distal",
+  "Vestibular",
+  "Lingual / Palatina"
+];
+
+let currentDentition = "permanent";
 let selectedTeeth = [];
-
-let records = [];
-
 let pendingRecords = [];
+let savedRecords = [];
 
-const surfaceState = {
- permanent: {},
- temporary: {}
-};
+document.getElementById("patientDate").value =
+  new Date().toLocaleDateString("en-CA");
 
-const upperArch = document.getElementById("upperArch");
-const lowerArch = document.getElementById("lowerArch");
+function createTooth(number, parent) {
+  const item = document.createElement("div");
+  item.className = "tooth-item";
 
-const dentitionSelect = document.getElementById("dentition");
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "tooth";
+  button.setAttribute("aria-label", "Diente " + number);
 
-function currentType() {
-  return dentitionSelect.value;
+  button.onclick = function() {
+    toggleTooth(number);
+  };
+
+  const label = document.createElement("span");
+  label.className = "tooth-number";
+  label.textContent = number;
+
+  item.appendChild(button);
+  item.appendChild(label);
+  parent.appendChild(item);
 }
 
-function getSurfaces(number) {
-  const type = currentType();
+function createQuadrant(numbers, parent) {
+  const quadrant = document.createElement("div");
+  quadrant.className = "quadrant";
 
-  if (!surfaceState[type][number]) {
-    surfaceState[type][number] = [];
+  numbers.forEach(number => createTooth(number, quadrant));
+
+  parent.appendChild(quadrant);
+}
+
+function drawArch(elementId, numbers) {
+  const arch = document.getElementById(elementId);
+  arch.innerHTML = "";
+
+  const middle = Math.floor(numbers.length / 2);
+
+  createQuadrant(numbers.slice(0, middle), arch);
+
+  const divider = document.createElement("div");
+  divider.className = "midline";
+  arch.appendChild(divider);
+
+  createQuadrant(numbers.slice(middle), arch);
+}
+
+function drawTeeth() {
+  const dentition = currentDentition === "permanent"
+    ? permanent
+    : temporary;
+
+  drawArch("upperArch", dentition.upper);
+  drawArch("lowerArch", dentition.lower);
+
+  updateSelection();
+}
+
+function toggleTooth(number) {
+  if (selectedTeeth.includes(number)) {
+    selectedTeeth = selectedTeeth.filter(n => n !== number);
+  } else {
+    selectedTeeth.push(number);
   }
 
-  return surfaceState[type][number];
+  updateSelection();
 }
 
-/* Selección múltiple de dientes */
-
 function updateSelection() {
-
   document.querySelectorAll(".tooth").forEach(button => {
-
-    const number = Number(button.dataset.number);
-
-    button.classList.toggle(
-      "selected",
-      selectedTeeth.includes(number)
-    );
-
+    const number = Number(button.getAttribute("aria-label").replace("Diente ", ""));
+    button.classList.toggle("selected", selectedTeeth.includes(number));
   });
 
   const info = document.getElementById("selectionInfo");
 
   if (selectedTeeth.length === 0) {
-    info.textContent = "Ningún diente seleccionado";
+    info.textContent = "No hay dientes seleccionados.";
   } else {
+    const ordered = [...selectedTeeth].sort((a,b) => a-b);
     info.textContent =
-      "Dientes seleccionados: " +
-      selectedTeeth.join(", ");
+      "Dientes seleccionados: " + ordered.join(", ") +
+      " (" + selectedTeeth.length + ")";
   }
-
-  updateCheckboxes();
 }
 
-function selectTooth(number) {
+function changeDentition(type) {
+  currentDentition = type;
+  selectedTeeth = [];
+  pendingRecords = [];
 
-  if (selectedTeeth.includes(number)) {
+  document.getElementById("individualRecords").innerHTML =
+    '<p class="empty">Selecciona dientes y prepara sus registros.</p>';
 
-    selectedTeeth = selectedTeeth.filter(
-      tooth => tooth !== number
-    );
-
-  } else {
-
-    selectedTeeth.push(number);
-
-  }
-
-  updateSelection();
-}
-
-/* Sincronizar superficies */
-
-function updateCheckboxes() {
-
-  const checkboxes = document.querySelectorAll(
-    'input[name="surface"]'
+  document.getElementById("permanentButton").classList.toggle(
+    "active", type === "permanent"
   );
 
+  document.getElementById("temporaryButton").classList.toggle(
+    "active", type === "temporary"
+  );
+
+  document.getElementById("permanentButton").classList.toggle(
+    "secondary-button", type !== "permanent"
+  );
+
+  document.getElementById("temporaryButton").classList.toggle(
+    "secondary-button", type !== "temporary"
+  );
+
+  drawTeeth();
+}
+
+function prepareRecords() {
   if (selectedTeeth.length === 0) {
-
-    checkboxes.forEach(box => box.checked = false);
-
+    alert("Selecciona al menos un diente.");
     return;
   }
 
-  const first = getSurfaces(selectedTeeth[0]);
+  const diagnosis = document.getElementById("generalDiagnosis").value;
+  const treatment = document.getElementById("generalTreatment").value;
+  const status = document.getElementById("generalStatus").value;
+  const notes = document.getElementById("generalNotes").value;
 
-  checkboxes.forEach(box => {
+  pendingRecords = selectedTeeth.map(number => ({
+    tooth: number,
+    surfaces: [],
+    diagnosis: diagnosis,
+    treatment: treatment,
+    status: status,
+    notes: notes
+  }));
 
-    box.checked = first.includes(box.value);
+  renderIndividualRecords();
 
+  document.getElementById("individualRecords").scrollIntoView({
+    behavior: "smooth",
+    block: "start"
   });
 }
-
-function updateSurfaceColors() {
-
-  document.querySelectorAll(".tooth").forEach(button => {
-
-    const number = Number(button.dataset.number);
-
-    const surfaces = getSurfaces(number);
-
-    button.querySelectorAll(".tooth-surface").forEach(surface => {
-
-      surface.classList.toggle(
-        "surface-selected",
-        surfaces.includes(surface.dataset.surface)
-      );
-
-    });
-
-  });
-
-}
-
-function toggleSurface(number, surfaceName) {
-
-  const surfaces = getSurfaces(number);
-
-  const index = surfaces.indexOf(surfaceName);
-
-  if (index >= 0) {
-    surfaces.splice(index, 1);
-  } else {
-    surfaces.push(surfaceName);
-  }
-
-  updateSurfaceColors();
-
-  if (selectedTeeth.includes(number)) {
-    updateCheckboxes();
-  }
-}
-
-/* Dibujo de cada diente */
-
-function createTooth(number, container) {
-
-  const item = document.createElement("div");
-
-  item.className = "tooth-item";
-
-  const button = document.createElement("button");
-
-  button.type = "button";
-  button.className = "tooth";
-  button.dataset.number = number;
-
-  button.setAttribute(
-    "aria-label",
-    "Diente " + number
-  );
-
-  button.innerHTML = `
-    <span class="tooth-surface vestibular"
-      data-surface="Vestibular">V</span>
-
-    <span class="tooth-surface mesial"
-      data-surface="Mesial">M</span>
-
-    <span class="tooth-surface occlusal"
-      data-surface="Oclusal">O</span>
-
-    <span class="tooth-surface distal"
-      data-surface="Distal">D</span>
-
-    <span class="tooth-surface lingual"
-      data-surface="Lingual/Palatina">L</span>
-  `;
-
-  button.addEventListener("click", () => {
-
-    selectTooth(number);
-
-  });
-
-  button.querySelectorAll(".tooth-surface").forEach(surface => {
-
-    surface.addEventListener("click", event => {
-
-      event.stopPropagation();
-
-      if (!selectedTeeth.includes(number)) {
-        selectTooth(number);
-      }
-
-      toggleSurface(number, surface.dataset.surface);
-
-    });
-
-  });
-
-  const numberLabel = document.createElement("span");
-
-  numberLabel.className = "tooth-number";
-
-  numberLabel.textContent = number;
-
-  item.appendChild(button);
-
-  item.appendChild(numberLabel);
-
-  container.appendChild(item);
-
-}
-
-/* Construcción de arcadas */
-
-function drawTeeth() {
-
-  upperArch.innerHTML = "";
-  lowerArch.innerHTML = "";
-
-  selectedTeeth = [];
-
-  const type = currentType();
-
-  const data = type === "permanent" ? permanent : temporary;
-
-  const upperLeft = document.createElement("div");
-  const upperRight = document.createElement("div");
-
-  upperLeft.className = "quadrant";
-  upperRight.className = "quadrant";
-
-  upperLeft.innerHTML =
-    '<div class="quadrant-title">CUADRANTE SUPERIOR DERECHO</div>';
-
-  upperRight.innerHTML =
-    '<div class="quadrant-title">CUADRANTE SUPERIOR IZQUIERDO</div>';
-
-  const middle = Math.floor(data.upper.length / 2);
-
-  data.upper.slice(0, middle).forEach(number => {
-    createTooth(number, upperLeft);
-  });
-
-  data.upper.slice(middle).forEach(number => {
-    createTooth(number, upperRight);
-  });
-
-  upperArch.appendChild(upperLeft);
-  upperArch.appendChild(upperRight);
-
-  const lowerLeft = document.createElement("div");
-  const lowerRight = document.createElement("div");
-
-  lowerLeft.className = "quadrant";
-  lowerRight.className = "quadrant";
-
-  lowerLeft.innerHTML =
-    '<div class="quadrant-title">CUADRANTE INFERIOR DERECHO</div>';
-
-  lowerRight.innerHTML =
-    '<div class="quadrant-title">CUADRANTE INFERIOR IZQUIERDO</div>';
-
-  data.lower.slice(0, middle).forEach(number => {
-    createTooth(number, lowerLeft);
-  });
-
-  data.lower.slice(middle).forEach(number => {
-    createTooth(number, lowerRight);
-  });
-
-  lowerArch.appendChild(lowerLeft);
-  lowerArch.appendChild(lowerRight);
-
-  updateSelection();
-  updateSurfaceColors();
-
-}
-
-dentitionSelect.addEventListener("change", drawTeeth);
-
-/* Selección desde las casillas */
-
-document.querySelectorAll('input[name="surface"]').forEach(box => {
-
-  box.addEventListener("change", () => {
-
-    if (selectedTeeth.length === 0) {
-
-      box.checked = false;
-
-      alert("Primero selecciona uno o varios dientes.");
-
-      return;
-    }
-
-    selectedTeeth.forEach(number => {
-
-      const surfaces = getSurfaces(number);
-
-      if (box.checked) {
-
-        if (!surfaces.includes(box.value)) {
-          surfaces.push(box.value);
-        }
-
-      } else {
-
-        const index = surfaces.indexOf(box.value);
-
-        if (index >= 0) {
-          surfaces.splice(index, 1);
-        }
-
-      }
-
-    });
-
-    updateSurfaceColors();
-
-  });
-
-});
-
-/* Quitar selección */
-
-document.getElementById("clearSelection").addEventListener(
-  "click",
-  () => {
-
-    selectedTeeth = [];
-
-    updateSelection();
-
-  }
-);
-
-/* Preparar registros individuales */
-
-document.getElementById("prepareRecords").addEventListener(
-  "click",
-  () => {
-
-    if (selectedTeeth.length === 0) {
-
-      alert("Selecciona al menos un diente.");
-
-      return;
-    }
-
-    const diagnosis = document.getElementById("diagnosis").value;
-
-    if (!diagnosis) {
-
-      alert("Selecciona un diagnóstico general.");
-
-      return;
-    }
-
-    const treatment = document.getElementById("treatment").value;
-
-    const status = document.getElementById("status").value;
-
-    const notes = document.getElementById("notes").value;
-
-    pendingRecords = selectedTeeth.map(number => ({
-
-      tooth: number,
-
-      surfaces: [...getSurfaces(number)],
-
-      diagnosis: diagnosis,
-
-      treatment: treatment || "No especificado",
-
-      status: status,
-
-      notes: notes
-
-    }));
-
-    renderIndividualRecords();
-
-  }
-);
-
-/* Formulario individual para modificar cada diente */
 
 function renderIndividualRecords() {
-
   const container = document.getElementById("individualRecords");
-
   container.innerHTML = "";
 
   if (pendingRecords.length === 0) {
+    container.innerHTML =
+      '<p class="empty">No hay registros pendientes de personalización.</p>';
     return;
   }
 
-  const title = document.createElement("h3");
-
-  title.textContent = "Personalizar cada diente";
-
-  container.appendChild(title);
-
   pendingRecords.forEach((record, index) => {
-
     const card = document.createElement("div");
-
-    card.className = "individual-card";
+    card.className = "tooth-card";
 
     card.innerHTML = `
       <h3>Diente ${record.tooth}</h3>
 
-      <label>Diagnóstico</label>
+      <div class="grid">
+        <div class="field">
+          <label>Diagnóstico (opcional)</label>
+          <select class="diagnosis">
+            <option value="">Sin especificar</option>
+            <option value="Caries dental">Caries dental</option>
+            <option value="Caries recurrente">Caries recurrente</option>
+            <option value="Fractura dental">Fractura dental</option>
+            <option value="Desgaste dental">Desgaste dental</option>
+            <option value="Pulpitis reversible">Pulpitis reversible</option>
+            <option value="Pulpitis irreversible">Pulpitis irreversible</option>
+            <option value="Necrosis pulpar">Necrosis pulpar</option>
+            <option value="Periodontitis">Periodontitis</option>
+            <option value="Gingivitis">Gingivitis</option>
+            <option value="Ausencia dental">Ausencia dental</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
 
-      <select class="individual-diagnosis">
-        <option value="Caries">Caries</option>
-        <option value="Caries recurrente">Caries recurrente</option>
-        <option value="Restauración existente">Restauración existente</option>
-        <option value="Restauración defectuosa">Restauración defectuosa</option>
-        <option value="Fractura dental">Fractura dental</option>
-        <option value="Ausencia dental">Ausencia dental</option>
-        <option value="Diente retenido">Diente retenido</option>
-        <option value="Movilidad dental">Movilidad dental</option>
-        <option value="Desgaste dental">Desgaste dental</option>
-        <option value="Lesión periapical">Lesión periapical</option>
-        <option value="Tratamiento endodóntico">Tratamiento endodóntico</option>
-        <option value="Corona existente">Corona existente</option>
-        <option value="Extracción indicada">Extracción indicada</option>
-        <option value="Sin alteraciones clínicas registradas">Sin alteraciones clínicas registradas</option>
-      </select>
+        <div class="field">
+          <label>Tratamiento (opcional)</label>
+          <select class="treatment">
+            <option value="">Sin especificar</option>
+            <option value="Resina">Resina</option>
+            <option value="Amalgama">Amalgama</option>
+            <option value="Ionómero de vidrio">Ionómero de vidrio</option>
+            <option value="Extracción">Extracción</option>
+            <option value="Endodoncia">Endodoncia</option>
+            <option value="Corona">Corona</option>
+            <option value="Profilaxis">Profilaxis</option>
+            <option value="Raspado y alisado radicular">Raspado y alisado radicular</option>
+            <option value="Sellador de fosetas y fisuras">Sellador de fosetas y fisuras</option>
+            <option value="Aplicación de flúor">Aplicación de flúor</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+      </div>
 
-      <label>Tratamiento</label>
+      <div class="field">
+        <label>Estado del tratamiento (opcional)</label>
+        <select class="status">
+          <option value="">Sin especificar</option>
+          <option value="Pendiente">Pendiente</option>
+          <option value="En proceso">En proceso</option>
+          <option value="Realizado">Realizado</option>
+          <option value="En observación">En observación</option>
+          <option value="No requiere tratamiento">No requiere tratamiento</option>
+        </select>
+      </div>
 
-      <select class="individual-treatment">
-        <option value="No especificado">No especificado</option>
-        <option value="Resina">Resina</option>
-        <option value="Ionómero de vidrio">Ionómero de vidrio</option>
-        <option value="Sellador de fosetas y fisuras">Sellador de fosetas y fisuras</option>
-        <option value="Pulpotomía">Pulpotomía</option>
-        <option value="Pulpectomía">Pulpectomía</option>
-        <option value="Tratamiento de conductos">Tratamiento de conductos</option>
-        <option value="Extracción">Extracción</option>
-        <option value="Corona">Corona</option>
-        <option value="Profilaxis">Profilaxis</option>
-        <option value="Aplicación de flúor">Aplicación de flúor</option>
-        <option value="Prótesis">Prótesis</option>
-        <option value="Sin tratamiento indicado">Sin tratamiento indicado</option>
-      </select>
+      <div class="field">
+        <label>Superficies dentales</label>
+        <div class="surface-options"></div>
+      </div>
 
-      <label>Estado</label>
-
-      <select class="individual-status">
-        <option>Pendiente</option>
-        <option>En proceso</option>
-        <option>Terminado</option>
-      </select>
-
-      <label>Observaciones</label>
-
-      <textarea class="individual-notes" rows="2"></textarea>
-
-      <p><strong>Superficies seleccionadas:</strong></p>
-
-      <div class="individual-surfaces"></div>
+      <div class="field">
+        <label>Observaciones individuales</label>
+        <textarea class="notes" placeholder="Observaciones del diente"></textarea>
+      </div>
     `;
 
-    const diagnosisSelect = card.querySelector(
-      ".individual-diagnosis"
-    );
+    const diagnosis = card.querySelector(".diagnosis");
+    const treatment = card.querySelector(".treatment");
+    const status = card.querySelector(".status");
+    const notes = card.querySelector(".notes");
 
-    const treatmentSelect = card.querySelector(
-      ".individual-treatment"
-    );
+    diagnosis.value = record.diagnosis;
+    treatment.value = record.treatment;
+    status.value = record.status;
+    notes.value = record.notes;
 
-    const statusSelect = card.querySelector(
-      ".individual-status"
-    );
+    diagnosis.onchange = () => {
+      record.diagnosis = diagnosis.value;
+    };
 
-    const notesField = card.querySelector(
-      ".individual-notes"
-    );
+    treatment.onchange = () => {
+      record.treatment = treatment.value;
+    };
 
-    const surfaceContainer = card.querySelector(
-      ".individual-surfaces"
-    );
+    status.onchange = () => {
+      record.status = status.value;
+    };
 
-    diagnosisSelect.value = record.diagnosis;
+    notes.oninput = () => {
+      record.notes = notes.value;
+    };
 
-    treatmentSelect.value = record.treatment;
+    const surfaceContainer = card.querySelector(".surface-options");
 
-    statusSelect.value = record.status;
-
-    notesField.value = record.notes;
-
-    record.surfaces.forEach(surface => {
-
+    surfaces.forEach(surface => {
       const label = document.createElement("label");
-
-      label.style.display = "inline-flex";
-      label.style.alignItems = "center";
-      label.style.marginRight = "12px";
-      label.style.fontWeight = "normal";
+      label.className = "surface-option";
 
       const checkbox = document.createElement("input");
-
       checkbox.type = "checkbox";
-      checkbox.checked = true;
-      checkbox.style.width = "auto";
-      checkbox.style.margin = "0 5px 0 0";
+      checkbox.value = surface;
 
-      const span = document.createElement("span");
+      checkbox.checked = record.surfaces.includes(surface);
 
-      span.textContent = surface;
-
-      checkbox.addEventListener("change", () => {
-
+      checkbox.onchange = () => {
         if (checkbox.checked) {
-
           if (!record.surfaces.includes(surface)) {
             record.surfaces.push(surface);
           }
-
         } else {
-
-          record.surfaces = record.surfaces.filter(
-            item => item !== surface
-          );
-
+          record.surfaces = record.surfaces.filter(s => s !== surface);
         }
-
-      });
+      };
 
       label.appendChild(checkbox);
-      label.appendChild(span);
-
+      label.appendChild(document.createTextNode(surface));
       surfaceContainer.appendChild(label);
-
-    });
-
-    diagnosisSelect.addEventListener("change", () => {
-      record.diagnosis = diagnosisSelect.value;
-    });
-
-    treatmentSelect.addEventListener("change", () => {
-      record.treatment = treatmentSelect.value;
-    });
-
-    statusSelect.addEventListener("change", () => {
-      record.status = statusSelect.value;
-    });
-
-    notesField.addEventListener("input", () => {
-      record.notes = notesField.value;
     });
 
     container.appendChild(card);
-
   });
-
 }
 
-/* Guardar todos los registros */
-
-document.getElementById("saveRecords").addEventListener(
-  "click",
-  () => {
-
-    if (pendingRecords.length === 0) {
-
-      alert("Primero prepara los registros.");
-
-      return;
-    }
-
-    const patient = document.getElementById("patient").value;
-
-    const number = document.getElementById("recordNumber").value;
-
-    const date = document.getElementById("date").value;
-
-    if (!patient.trim()) {
-
-      alert("Escribe el nombre del paciente.");
-
-      return;
-    }
-
-    if (!date) {
-
-      alert("Selecciona la fecha de consulta.");
-
-      return;
-    }
-
-    pendingRecords.forEach(record => {
-
-      records.push({
-
-        patient: patient,
-
-        number: number,
-
-        date: date,
-
-        dentition: currentType(),
-
-        tooth: record.tooth,
-
-        surfaces: [...record.surfaces],
-
-        diagnosis: record.diagnosis,
-
-        treatment: record.treatment,
-
-        status: record.status,
-
-        notes: record.notes
-
-      });
-
-    });
-
-    pendingRecords = [];
-
-    document.getElementById("individualRecords").innerHTML = "";
-
-    document.getElementById("diagnosis").value = "";
-
-    document.getElementById("treatment").value = "";
-
-    document.getElementById("notes").value = "";
-
-    selectedTeeth = [];
-
-    updateSelection();
-
-    renderRecords();
-
-    alert("Registros guardados correctamente.");
-
-  }
-);
-
-/* Mostrar resumen */
-
-function renderRecords() {
-
-  const container = document.getElementById("records");
-
-  container.innerHTML = "";
-
-  if (records.length === 0) {
-
-    container.textContent = "No hay registros todavía.";
-
+function saveRecords() {
+  if (pendingRecords.length === 0) {
+    alert("Primero prepara los registros de los dientes seleccionados.");
     return;
   }
 
-  records.forEach((record, index) => {
+  const patient = document.getElementById("patientName").value.trim();
+  const date = document.getElementById("patientDate").value;
+  const file = document.getElementById("patientFile").value.trim();
 
-    const div = document.createElement("div");
-
-    div.className = "record";
-
-    const title = document.createElement("strong");
-
-    title.textContent =
-      "Diente " + record.tooth + " - " + record.diagnosis;
-
-    div.appendChild(title);
-
-    const details = document.createElement("p");
-
-    details.textContent =
-      "Paciente: " + record.patient +
-      " | Expediente: " + (record.number || "No especificado") +
-      " | Dentición: " +
-      (record.dentition === "permanent" ? "Permanente" : "Temporal") +
-      " | Superficies: " +
-      (record.surfaces.join(", ") || "No especificadas") +
-      " | Tratamiento: " + record.treatment +
-      " | Estado: " + record.status +
-      " | Fecha: " + record.date;
-
-    div.appendChild(details);
-
-    const notes = document.createElement("p");
-
-    notes.textContent =
-      "Observaciones: " + (record.notes || "Ninguna");
-
-    div.appendChild(notes);
-
-    const remove = document.createElement("button");
-
-    remove.type = "button";
-    remove.className = "danger";
-    remove.textContent = "Eliminar registro";
-
-    remove.addEventListener("click", () => {
-
-      records.splice(index, 1);
-
-      renderRecords();
-
-    });
-
-    div.appendChild(remove);
-
-    container.appendChild(div);
-
-  });
-
-}
-
-/* Limpiar registros */
-
-document.getElementById("clear").addEventListener("click", () => {
-
-  if (confirm("¿Deseas eliminar todos los registros de esta sesión?")) {
-
-    records = [];
-
-    pendingRecords = [];
-
-    document.getElementById("individualRecords").innerHTML = "";
-
-    renderRecords();
-
+  if (!patient) {
+    alert("Escribe el nombre del paciente.");
+    return;
   }
 
-});
+  if (!date) {
+    alert("Selecciona la fecha del registro.");
+    return;
+  }
 
-/* Imprimir PDF */
+  pendingRecords.forEach(record => {
+    savedRecords.push({
+      patient: patient,
+      date: date,
+      file: file,
+      dentition: currentDentition === "permanent"
+        ? "Permanente"
+        : "Temporal",
+      tooth: record.tooth,
+      diagnosis: record.diagnosis,
+      treatment: record.treatment,
+      status: record.status,
+      surfaces: [...record.surfaces],
+      notes: record.notes
+    });
+  });
 
-document.getElementById("print").addEventListener("click", () => {
+  pendingRecords = [];
+  selectedTeeth = [];
 
-  window.print();
+  document.getElementById("individualRecords").innerHTML =
+    '<p class="empty">Registros guardados. Puedes seleccionar otros dientes.</p>';
 
-});
+  document.getElementById("generalDiagnosis").value = "";
+  document.getElementById("generalTreatment").value = "";
+  document.getElementById("generalStatus").value = "";
+  document.getElementById("generalNotes").value = "";
 
-/* Fecha actual */
+  updateSelection();
+  renderSavedRecords();
 
-document.getElementById("date").value =
-  new Date().toLocaleDateString("en-CA");
+  alert("Los registros se agregaron correctamente.");
+}
 
-/* Iniciar */
+function renderSavedRecords() {
+  const container = document.getElementById("savedRecords");
+  container.innerHTML = "";
+
+  if (savedRecords.length === 0) {
+    container.innerHTML =
+      '<p class="empty">Todavía no hay registros guardados.</p>';
+    return;
+  }
+
+  savedRecords.forEach((record, index) => {
+    const div = document.createElement("div");
+    div.className = "record";
+
+    const surfacesText = record.surfaces.length
+      ? record.surfaces.join(", ")
+      : "Sin especificar";
+
+    div.innerHTML = `
+      <strong>Paciente:</strong> ${escapeHTML(record.patient)}<br>
+      <strong>Expediente:</strong> ${escapeHTML(record.file || "No especificado")}<br>
+      <strong>Fecha:</strong> ${escapeHTML(record.date)}<br>
+      <strong>Dentición:</strong> ${record.dentition}<br>
+      <strong>Diente:</strong> ${record.tooth}<br>
+      <strong>Diagnóstico:</strong> ${escapeHTML(record.diagnosis || "Sin especificar")}<br>
+      <strong>Tratamiento:</strong> ${escapeHTML(record.treatment || "Sin especificar")}<br>
+      <strong>Estado:</strong> ${escapeHTML(record.status || "Sin especificar")}<br>
+      <strong>Superficies:</strong> ${escapeHTML(surfacesText)}<br>
+      <strong>Observaciones:</strong> ${escapeHTML(record.notes || "Sin observaciones")}
+      <div class="button-row no-print">
+        <button class="danger-button" onclick="deleteRecord(${index})">
+          Eliminar registro
+        </button>
+      </div>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, function(character) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    }[character];
+  });
+}
+
+function deleteRecord(index) {
+  if (confirm("¿Deseas eliminar este registro?")) {
+    savedRecords.splice(index, 1);
+    renderSavedRecords();
+  }
+}
+
+function clearRecords() {
+  if (confirm("¿Seguro que deseas eliminar todos los registros guardados y pendientes?")) {
+    savedRecords = [];
+    pendingRecords = [];
+    selectedTeeth = [];
+
+    document.getElementById("individualRecords").innerHTML =
+      '<p class="empty">Selecciona dientes y prepara sus registros.</p>';
+
+    renderSavedRecords();
+    updateSelection();
+  }
+}
 
 drawTeeth();
-
-renderRecords();
-
 </script>
 
 </body>
