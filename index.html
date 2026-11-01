@@ -32,6 +32,7 @@ button{border:none;border-radius:8px;padding:11px 16px;font-size:14px;font-weigh
 .empty{color:var(--muted);font-size:14px}.notice{background:#fff8e7;border:1px solid #f1dfaa;color:#70551a;padding:12px;border-radius:8px;font-size:13px;line-height:1.5}
 .status-message{padding:11px;border-radius:8px;background:#edf7fa;color:#10536b;font-size:14px;line-height:1.5;margin:10px 0}
 .status-message.error{background:#fdecec;color:#8e2020}.hidden{display:none!important}
+.danger-button{background:#a83232;color:#fff;border:0}.danger-button:disabled{opacity:.45;cursor:not-allowed}
 .patient-list{display:grid;gap:8px}.patient-choice{text-align:left;background:#f4f8fa;color:var(--text);border:1px solid var(--border)}
 .patient-choice.active{border:2px solid var(--primary);background:#edf7fa}
 @media(max-width:600px){body{padding:10px}.card{padding:14px}.grid{grid-template-columns:1fr;gap:0}.arch{justify-content:flex-start}}
@@ -68,7 +69,7 @@ button{border:none;border-radius:8px;padding:11px 16px;font-size:14px;font-weigh
 <h2>1. Expedientes de pacientes</h2>
 <p class="hint">Selecciona un expediente existente o registra un paciente nuevo. Los datos se guardan en tu cuenta.</p>
 <div class="field"><label for="patientPicker">Pacientes registrados</label><select id="patientPicker"><option value="">Selecciona un paciente</option></select></div>
-<div class="button-row no-print"><button class="secondary-button" id="refreshPatients">Actualizar lista</button><button class="secondary-button" id="newPatientButton">Nuevo paciente</button></div>
+<div class="button-row no-print"><button class="secondary-button" id="refreshPatients">Actualizar lista</button><button class="secondary-button" id="newPatientButton">Nuevo paciente</button><button class="danger-button" id="deletePatientButton" disabled>Eliminar paciente seleccionado</button></div>
 <div id="patientMessage" class="status-message" aria-live="polite">Selecciona un expediente o crea uno nuevo.</div>
 </section>
 
@@ -208,6 +209,7 @@ async function loadPatients(){
   const picker=$("patientPicker"),selected=picker.value;
   picker.innerHTML='<option value="">Selecciona un paciente</option>'+patients.map(p=>`<option value="${p.id}">${escapeHTML(p.nombre_completo)}</option>`).join("");
   if(patients.some(p=>p.id===selected))picker.value=selected;
+  $("deletePatientButton").disabled=!picker.value;
   message("patientMessage",patients.length?`Hay ${patients.length} paciente(s) en tu cuenta.`:"Todavía no tienes pacientes. Pulsa «Nuevo paciente».");
 }
 $("refreshPatients").addEventListener("click",loadPatients);
@@ -219,7 +221,8 @@ $("newPatientButton").addEventListener("click",()=>{
 });
 $("patientPicker").addEventListener("change",async()=>{
   const id=$("patientPicker").value;
-  if(!id)return;
+  $("deletePatientButton").disabled=!id;
+  if(!id){currentPatientId=null;currentOdontogramId=null;savedRecords=[];renderSavedRecords();return}
   currentPatientId=id;pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;renderIndividualRecords();updateSelection();
   const patient=patients.find(p=>p.id===id);
   $("patientName").value=patient?.nombre_completo||"";
@@ -280,7 +283,9 @@ function renderSavedRecords(){
   const actions=document.createElement("div");actions.className="button-row no-print";
   const edit=document.createElement("button");edit.type="button";edit.className="secondary-button";edit.textContent="Editar registro";
   edit.addEventListener("click",()=>editSavedRecord(savedRecords.indexOf(r)));
-  actions.appendChild(edit);div.appendChild(actions);c.appendChild(div);
+  const remove=document.createElement("button");remove.type="button";remove.className="danger-button";remove.textContent="Eliminar registro";
+  remove.addEventListener("click",()=>deleteSavedRecord(savedRecords.indexOf(r)));
+  actions.append(edit,remove);div.appendChild(actions);c.appendChild(div);
  });
 }
 
@@ -299,6 +304,33 @@ function editSavedRecord(index){
  const saveButton=$("saveButton");saveButton.textContent="Guardar cambios";
  $("individualRecords").scrollIntoView({behavior:"smooth",block:"start"});
 }
+
+
+async function deleteSavedRecord(index){
+ if(index<0||index>=savedRecords.length||!currentPatientId||!currentOdontogramId)return;
+ const record=savedRecords[index];
+ if(!confirm(`¿Eliminar definitivamente el registro del diente ${record.tooth}? Esta acción no se puede deshacer.`))return;
+ const updated=savedRecords.filter((_,i)=>i!==index);
+ const payload={date:$("patientDate").value,file:$("patientFile").value.trim(),records:updated};
+ const {error}=await db.from("Odontogramas").update({datos:payload}).eq("id",currentOdontogramId).eq("paciente_id",currentPatientId);
+ if(error){message("patientMessage","No se pudo eliminar el registro: "+error.message,true);return}
+ savedRecords=updated;pendingRecords=[];editingRecordIndex=null;$("saveButton").textContent="Guardar en Supabase";renderSavedRecords();renderIndividualRecords();message("patientMessage",`Se eliminó el registro del diente ${record.tooth}.`);
+}
+
+async function deleteSelectedPatient(){
+ const id=$("patientPicker").value;
+ const patient=patients.find(p=>p.id===id);
+ if(!id||!patient)return;
+ const typed=prompt(`Esta acción eliminará al paciente y todos sus odontogramas asociados.
+
+Para confirmar, escribe exactamente el nombre:
+${patient.nombre_completo}`);
+ if(typed!==patient.nombre_completo)return alert("No se confirmó la eliminación. No se realizaron cambios.");
+ const {error}=await db.from("Pacientes").delete().eq("id",id);
+ if(error){message("patientMessage","No se pudo eliminar el paciente: "+error.message,true);return}
+ currentPatientId=null;currentOdontogramId=null;savedRecords=[];pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;$("patientPicker").value="";$("patientName").value="";$("patientFile").value="";$("patientDate").value=localDate();$("deletePatientButton").disabled=true;renderSavedRecords();renderIndividualRecords();updateSelection();await loadPatients();message("patientMessage","Paciente y odontogramas asociados eliminados correctamente.");
+}
+$("deletePatientButton").addEventListener("click",deleteSelectedPatient);
 
 async function saveRecords(){
  if(!pendingRecords.length)return alert("Primero prepara los registros de los dientes seleccionados.");
