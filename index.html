@@ -67,19 +67,29 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   margin: 15px 0;
 }
 
+/* Diseño visual de las piezas dentales */
 .tooth {
-  width: 39px;
-  height: 45px;
+  width: 42px;
+  height: 48px;
   padding: 4px;
-  background: #e8edf5;
+  background: #fffdf5;
   color: #243e70;
-  border: 1px solid #aab7c9;
+  border: 2px solid #c5bda9;
+  border-radius: 45% 45% 40% 40%;
   font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+  transition: 0.2s;
+}
+
+.tooth:hover {
+  background: #e8f1ff;
+  transform: scale(1.08);
 }
 
 .tooth.selected {
   background: #315b9a;
   color: white;
+  border-color: #243e70;
 }
 
 .label {
