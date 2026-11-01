@@ -63,22 +63,27 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 5px;
+  gap: 8px;
   margin: 15px 0;
 }
 
-/* Diseño visual de las piezas dentales */
+/* Diseño visual y de cuadrícula de las piezas dentales unificado */
 .tooth {
-  width: 42px;
-  height: 48px;
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 16px 16px 16px;
+  gap: 2px;
+  width: 58px;
+  height: 58px;
   padding: 4px;
   background: #fffdf5;
   color: #243e70;
   border: 2px solid #c5bda9;
-  border-radius: 45% 45% 40% 40%;
-  font-weight: bold;
+  border-radius: 12px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.12);
-  transition: 0.2s;
+  transition: transform 0.2s;
+  cursor: pointer;
 }
 
 .tooth:hover {
@@ -87,6 +92,58 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 
 .tooth.selected {
+  background: #315b9a;
+  color: white;
+  border-color: #243e70;
+}
+
+.tooth-number {
+  position: absolute;
+  top: -19px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.tooth-surface {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: bold;
+  border: 1px solid #c5bda9;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.vestibular {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.mesial {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.occlusal {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.distal {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.lingual {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.tooth-surface.surface-selected {
   background: #315b9a;
   color: white;
   border-color: #243e70;
@@ -147,78 +204,9 @@ small {
 
 @media (max-width: 400px) {
   .tooth {
-    width: 34px;
-    height: 42px;
-    font-size: 12px;
+    width: 45px;
+    height: 45px;
   }
-}
-/* Diseño de las superficies dentales */
-.tooth {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: 16px 16px 16px;
-  gap: 2px;
-  width: 58px;
-  height: 58px;
-  padding: 4px;
-  background: #fffdf5;
-  border: 2px solid #c5bda9;
-  border-radius: 12px;
-  color: #243e70;
-  cursor: pointer;
-}
-
-.tooth-number {
-  position: absolute;
-  top: -19px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 11px;
-  font-weight: bold;
-}
-
-.tooth-surface {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  font-weight: bold;
-  border: 1px solid #c5bda9;
-  border-radius: 4px;
-  background: #fff;
-  cursor: pointer;
-}
-
-.vestibular {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.mesial {
-  grid-column: 1;
-  grid-row: 2;
-}
-
-.occlusal {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-.distal {
-  grid-column: 3;
-  grid-row: 2;
-}
-
-.lingual {
-  grid-column: 2;
-  grid-row: 3;
-}
-
-.tooth-surface.surface-selected {
-  background: #315b9a;
-  color: white;
-  border-color: #243e70;
 }
 </style>
 </head>
@@ -369,46 +357,48 @@ function drawTeeth() {
   const type = document.getElementById("dentition").value;
   const data = type === "permanent" ? permanent : temporary;
 
-function createTooth(number, container) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "tooth";
-  button.setAttribute("aria-label", "Seleccionar diente " + number);
+  function createTooth(number, container) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tooth";
+    button.setAttribute("aria-label", "Seleccionar diente " + number);
 
-  button.innerHTML = `
-    <span class="tooth-number">${number}</span>
-    <span class="tooth-surface vestibular" data-surface="Vestibular">V</span>
-    <span class="tooth-surface mesial" data-surface="Mesial">M</span>
-    <span class="tooth-surface occlusal" data-surface="Oclusal">O</span>
-    <span class="tooth-surface distal" data-surface="Distal">D</span>
-    <span class="tooth-surface lingual" data-surface="Lingual/Palatina">L/P</span>
-  `;
+    button.innerHTML = `
+      <span class="tooth-number">${number}</span>
+      <span class="tooth-surface vestibular" data-surface="Vestibular">V</span>
+      <span class="tooth-surface mesial" data-surface="Mesial">M</span>
+      <span class="tooth-surface occlusal" data-surface="Oclusal">O</span>
+      <span class="tooth-surface distal" data-surface="Distal">D</span>
+      <span class="tooth-surface lingual" data-surface="Lingual/Palatina">L/P</span>
+    `;
 
-  button.addEventListener("click", () => {
-    document.querySelectorAll(".tooth").forEach(t =>
-      t.classList.remove("selected")
-    );
+    button.addEventListener("click", () => {
+      document.querySelectorAll(".tooth").forEach(t =>
+        t.classList.remove("selected")
+      );
 
-    button.classList.add("selected");
-    selected = number;
+      button.classList.add("selected");
+      selected = number;
 
-    document.getElementById("selectedTooth").textContent =
-      "Diente seleccionado: " + number;
-  });
-
-  button.querySelectorAll(".tooth-surface").forEach(surface => {
-    surface.addEventListener("click", event => {
-      event.stopPropagation();
-      button.click();
-      surface.classList.toggle("surface-selected");
+      document.getElementById("selectedTooth").textContent =
+        "Diente seleccionado: " + number;
     });
-  });
 
-  container.appendChild(button);
-}
+    button.querySelectorAll(".tooth-surface").forEach(surface => {
+      surface.addEventListener("click", event => {
+        event.stopPropagation();
+        button.click();
+        surface.classList.toggle("surface-selected");
+      });
+    });
+
+    container.appendChild(button);
+  }
+
   data.upper.forEach(n => createTooth(n, upper));
   data.lower.forEach(n => createTooth(n, lower));
 }
+
 document.getElementById("dentition").addEventListener("change", drawTeeth);
 
 document.getElementById("date").value =
