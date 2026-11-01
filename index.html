@@ -144,15 +144,20 @@ async function showSession(session){
   $("app").classList.toggle("hidden",!hasSession);
   if(hasSession){$("signedInAs").textContent="Sesión: "+session.user.email;await loadPatients();}
 }
+function showRecoveryForm(){
+  $("authCard").classList.remove("hidden");
+  $("app").classList.add("hidden");
+  $("recoveryPanel").classList.remove("hidden");
+  message("authMessage","Escribe tu nueva contraseña para recuperar el acceso.");
+}
 async function initAuth(){
+  const recoveryPending=sessionStorage.getItem("mexodonto_password_recovery")==="1" || new URLSearchParams(location.hash.slice(1)).get("type")==="recovery";
   const {data:{session}}=await db.auth.getSession();
-  await showSession(session);
+  if(recoveryPending)showRecoveryForm();else await showSession(session);
   db.auth.onAuthStateChange((event,session)=>{
     if(event==="PASSWORD_RECOVERY"){
-      $("authCard").classList.remove("hidden");
-      $("app").classList.add("hidden");
-      $("recoveryPanel").classList.remove("hidden");
-      message("authMessage","Escribe tu nueva contraseña para recuperar el acceso.");
+      sessionStorage.setItem("mexodonto_password_recovery","1");
+      showRecoveryForm();
       return;
     }
     setTimeout(()=>showSession(session),0);
@@ -164,6 +169,7 @@ $("forgotPasswordButton").addEventListener("click",async()=>{
   message("authMessage","Enviando enlace de recuperación…");
   const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
   if(error)return message("authMessage","No se pudo enviar el correo: "+error.message,true);
+  sessionStorage.setItem("mexodonto_password_recovery","1");
   message("authMessage","Si el correo está registrado, recibirás un enlace para restablecer tu contraseña. Revisa también la carpeta de correo no deseado.");
 });
 $("updatePasswordButton").addEventListener("click",async()=>{
@@ -173,6 +179,7 @@ $("updatePasswordButton").addEventListener("click",async()=>{
   const {error}=await db.auth.updateUser({password});
   if(error)return message("authMessage","No se pudo actualizar la contraseña: "+error.message,true);
   $("recoveryPanel").classList.add("hidden");
+  sessionStorage.removeItem("mexodonto_password_recovery");
   $("newPassword").value="";
   message("authMessage","Contraseña actualizada. Ya puedes iniciar sesión con tu nueva contraseña.");
   await db.auth.signOut();
