@@ -406,7 +406,9 @@ function createTooth(number, container) {
 
   container.appendChild(button);
 }
-
+  data.upper.forEach(n => createTooth(n, upper));
+  data.lower.forEach(n => createTooth(n, lower));
+}
 document.getElementById("dentition").addEventListener("change", drawTeeth);
 
 document.getElementById("date").value =
