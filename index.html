@@ -32,6 +32,10 @@ button{border:none;border-radius:8px;padding:11px 16px;font-size:14px;font-weigh
 .empty{color:var(--muted);font-size:14px}.notice{background:#fff8e7;border:1px solid #f1dfaa;color:#70551a;padding:12px;border-radius:8px;font-size:13px;line-height:1.5}
 .status-message{padding:11px;border-radius:8px;background:#edf7fa;color:#10536b;font-size:14px;line-height:1.5;margin:10px 0}
 .status-message.error{background:#fdecec;color:#8e2020}.hidden{display:none!important}
+.legal-links a{color:var(--primary-dark);font-weight:600}
+.legal-acceptance{display:flex;align-items:flex-start;gap:10px;margin-top:12px;padding:12px;border:1px solid var(--border);border-radius:8px;background:#f8fbfc}
+.legal-acceptance input{width:18px;height:18px;flex:0 0 18px;margin:2px 0 0;accent-color:var(--primary)}
+.legal-acceptance label{font-size:13px;font-weight:normal;line-height:1.5;margin:0}
 .danger-button{background:#a83232;color:#fff;border:0}.danger-button:disabled{opacity:.45;cursor:not-allowed}
 .patient-list{display:grid;gap:8px}.patient-choice{text-align:left;background:#f4f8fa;color:var(--text);border:1px solid var(--border)}
 .patient-choice.active{border:2px solid var(--primary);background:#edf7fa}
@@ -48,7 +52,15 @@ button{border:none;border-radius:8px;padding:11px 16px;font-size:14px;font-weigh
 <p class="hint">Inicia sesión o crea una cuenta. Cada dentista solo podrá consultar los expedientes de su propia cuenta.</p>
 <div class="field"><label for="authEmail">Correo electrónico</label><input id="authEmail" type="email" autocomplete="username" required></div>
 <div class="field"><label for="authPassword">Contraseña</label><input id="authPassword" type="password" autocomplete="current-password" required></div>
-<div class="button-row"><button class="primary-button" id="loginButton">Iniciar sesión</button><button class="secondary-button" id="signupButton">Crear cuenta</button></div>
+<div class="button-row"><button class="primary-button" id="loginButton" type="button">Iniciar sesión</button><button class="secondary-button" id="signupButton" type="button">Crear cuenta</button></div>
+<div class="legal-links hint" style="margin-top:14px">
+  Consulta los <a href="https://sites.google.com/view/mexodonto/profesionales/t%C3%A9rminos-condiciones-y-privacidad?authuser=0" target="_blank" rel="noopener noreferrer">Términos y condiciones</a>
+  y el <a href="https://sites.google.com/view/mexodonto/profesionales/t%C3%A9rminos-condiciones-y-privacidad?authuser=0" target="_blank" rel="noopener noreferrer">Aviso de privacidad</a>.
+</div>
+<div class="legal-acceptance">
+  <input id="legalAcceptance" type="checkbox" required>
+  <label for="legalAcceptance">He leído y acepto los Términos y condiciones, y declaro que he tenido acceso al Aviso de privacidad.</label>
+</div>
 <div class="field" style="margin-top:10px"><button type="button" class="link-button" id="forgotPasswordButton">¿Olvidaste tu contraseña?</button></div>
 <div id="recoveryPanel" class="hidden">
   <div class="field"><label for="newPassword">Nueva contraseña</label><input id="newPassword" type="password" autocomplete="new-password" minlength="8"></div>
@@ -119,7 +131,7 @@ button{border:none;border-radius:8px;padding:11px 16px;font-size:14px;font-weigh
 <div id="savedRecords"><p class="empty">Selecciona un paciente para consultar sus registros.</p></div>
 </section>
 
-<div class="notice"><strong>Protección de datos:</strong> utiliza únicamente pacientes ficticios durante las pruebas. Antes de incorporar expedientes reales, verifica las políticas de privacidad, el acceso de usuarios, las copias de seguridad y las obligaciones legales aplicables. No compartas contraseñas ni claves secretas de Supabase.</div>
+
 </div>
 </div>
 
@@ -208,8 +220,20 @@ $("signupButton").addEventListener("click",async()=>{
   const email=$("authEmail").value.trim(),password=$("authPassword").value;
   if(!email||!password)return message("authMessage","Escribe tu correo y contraseña.",true);
   if(password.length<8)return message("authMessage","Usa una contraseña de al menos 8 caracteres.",true);
+  if(!$("legalAcceptance").checked)return message("authMessage","Para crear una cuenta, debes leer y aceptar los Términos y condiciones y confirmar que has tenido acceso al Aviso de privacidad.",true);
   message("authMessage","Creando cuenta…");
-  const {data,error}=await db.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});
+  const {data,error}=await db.auth.signUp({
+    email,
+    password,
+    options:{
+      emailRedirectTo:location.origin+location.pathname,
+      data:{
+        terms_accepted:true,
+        terms_version:"2026-11-01",
+        privacy_version:"2026-11-01"
+      }
+    }
+  });
   if(error)return message("authMessage",error.message,true);
   message("authMessage",data.session?"Cuenta creada. Ya puedes entrar.":"Cuenta creada. Revisa tu correo para confirmar la dirección antes de iniciar sesión.");
 });
