@@ -92,6 +92,22 @@ button{border:none;border-radius:8px;padding:11px 16px;font-size:14px;font-weigh
 <div class="field"><label for="patientDate">Fecha del registro</label><input id="patientDate" type="date"></div>
 </div>
 <div class="field"><label for="patientFile">Número de expediente (opcional)</label><input id="patientFile" type="text" placeholder="Número de expediente"></div>
+<div class="grid">
+ <div class="field"><label for="patientAge">Edad (años)</label><input id="patientAge" type="number" min="0" max="120" step="1" placeholder="Edad"></div>
+ <div class="field"><label for="patientWeight">Peso (kg)</label><input id="patientWeight" type="number" min="0" step="0.1" placeholder="Peso en kg"></div>
+ <div class="field"><label for="patientHeight">Talla (cm)</label><input id="patientHeight" type="number" min="0" step="0.1" placeholder="Talla en cm"></div>
+ <div class="field"><label for="patientPhone">Teléfono</label><input id="patientPhone" type="tel" placeholder="Teléfono de contacto"></div>
+ <div class="field"><label for="patientEmail">Correo electrónico</label><input id="patientEmail" type="email" placeholder="Correo del paciente"></div>
+ <div class="field"><label for="emergencyContact">Contacto de emergencia</label><input id="emergencyContact" type="text" placeholder="Nombre del contacto"></div>
+ <div class="field"><label for="emergencyPhone">Teléfono de emergencia</label><input id="emergencyPhone" type="tel" placeholder="Teléfono de emergencia"></div>
+</div>
+<div class="field"><label for="patientAddress">Dirección</label><textarea id="patientAddress" placeholder="Domicilio del paciente"></textarea></div>
+<div class="field"><label for="patientAllergies">Alergias</label><textarea id="patientAllergies" placeholder="Alergias conocidas o escribe «Ninguna conocida»"></textarea></div>
+<div class="field"><label for="patientConditions">Enfermedades o condiciones médicas</label><textarea id="patientConditions" placeholder="Antecedentes y condiciones médicas relevantes"></textarea></div>
+<div class="field"><label for="patientMedications">Medicamentos</label><textarea id="patientMedications" placeholder="Medicamentos actuales, dosis y frecuencia si se conocen"></textarea></div>
+<div class="field"><label for="patientObservations">Observaciones generales</label><textarea id="patientObservations" placeholder="Otras observaciones importantes"></textarea></div>
+<div class="button-row no-print"><button class="primary-button" id="savePatientButton" type="button">Guardar ficha del paciente</button></div>
+<p class="hint">La ficha personal y médica se guarda en Pacientes. Los registros dentales permanecen separados en Odontogramas.</p>
 </section>
 
 <section class="card">
@@ -143,12 +159,33 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const permanent={upper:[18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28],lower:[48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38]};
 const temporary={upper:[55,54,53,52,51,61,62,63,64,65],lower:[85,84,83,82,81,71,72,73,74,75]};
 const surfaces=["Oclusal","Mesial","Distal","Vestibular","Lingual / Palatina"];
-let currentDentition="permanent",selectedTeeth=[],pendingRecords=[],savedRecords=[],currentPatientId=null,currentOdontogramId=null,patients=[],recoveryMode=false;
+let currentDentition="permanent",selectedTeeth=[],pendingRecords=[],savedRecords=[],currentPatientId=null,currentOdontogramId=null,patients=[],recoveryMode=false,editingRecordIndex=null;
 
 const $=id=>document.getElementById(id);
 function message(id,text,error=false){$(id).textContent=text;$(id).classList.toggle("error",error)}
 function escapeHTML(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
 function localDate(){const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-")}
+const patientFieldMap={
+ patientAge:"edad",patientWeight:"peso",patientHeight:"talla",patientPhone:"telefono",patientEmail:"correo",
+ emergencyContact:"contacto_emergencia",emergencyPhone:"telefono_emergencia",patientAddress:"direccion",
+ patientAllergies:"alergias",patientConditions:"condiciones_medicas",patientMedications:"medicamentos",
+ patientObservations:"observaciones_generales"
+};
+function getPatientDbData(){
+ const data={};
+ Object.entries(patientFieldMap).forEach(([id,column])=>{
+  const value=$(id).value.trim();
+  if(["edad","peso","talla"].includes(column)) data[column]=value===""?null:Number(value);
+  else data[column]=value||null;
+ });
+ return data;
+}
+function setPatientProfile(patient={}){
+ Object.entries(patientFieldMap).forEach(([id,column])=>{$(id).value=patient[column]??""});
+}
+function clearPatientForm(){
+ $("patientName").value="";$("patientFile").value="";$("patientDate").value=localDate();setPatientProfile({});
+}
 $("patientDate").value=localDate();
 
 async function showSession(session){
@@ -237,9 +274,9 @@ $("signupButton").addEventListener("click",async()=>{
   if(error)return message("authMessage",error.message,true);
   message("authMessage",data.session?"Cuenta creada. Ya puedes entrar.":"Cuenta creada. Revisa tu correo para confirmar la dirección antes de iniciar sesión.");
 });
-$("logoutButton").addEventListener("click",async()=>{await db.auth.signOut();currentPatientId=null;currentOdontogramId=null;});
+$("logoutButton").addEventListener("click",async()=>{await db.auth.signOut();currentPatientId=null;currentOdontogramId=null;clearPatientForm();savedRecords=[];pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;renderSavedRecords();renderIndividualRecords();updateSelection();});
 async function loadPatients(){
-  const {data,error}=await db.from("Pacientes").select("id,nombre_completo,created_at").order("nombre_completo");
+  const {data,error}=await db.from("Pacientes").select("id,nombre_completo,edad,peso,talla,telefono,correo,contacto_emergencia,telefono_emergencia,direccion,alergias,condiciones_medicas,medicamentos,observaciones_generales,created_at").order("nombre_completo");
   if(error){message("patientMessage","No se pudieron cargar los pacientes: "+error.message,true);return}
   patients=data||[];
   const picker=$("patientPicker"),selected=picker.value;
@@ -250,21 +287,44 @@ async function loadPatients(){
 }
 $("refreshPatients").addEventListener("click",loadPatients);
 $("newPatientButton").addEventListener("click",()=>{
-  currentPatientId=null;currentOdontogramId=null;$("patientPicker").value="";
-  $("patientName").value="";$("patientFile").value="";$("patientDate").value=localDate();
+  currentPatientId=null;currentOdontogramId=null;editingRecordIndex=null;$("patientPicker").value="";
+  clearPatientForm();
   savedRecords=[];pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;renderSavedRecords();renderIndividualRecords();updateSelection();
   message("patientMessage","Paciente nuevo. Escribe su nombre y prepara el odontograma.");
 });
 $("patientPicker").addEventListener("change",async()=>{
   const id=$("patientPicker").value;
   $("deletePatientButton").disabled=!id;
-  if(!id){currentPatientId=null;currentOdontogramId=null;savedRecords=[];renderSavedRecords();return}
+  if(!id){currentPatientId=null;currentOdontogramId=null;savedRecords=[];pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;clearPatientForm();renderSavedRecords();renderIndividualRecords();updateSelection();$("saveButton").textContent="Guardar en Supabase";return}
   currentPatientId=id;pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;renderIndividualRecords();updateSelection();
   const patient=patients.find(p=>p.id===id);
   $("patientName").value=patient?.nombre_completo||"";
   $("patientFile").value="";
+  setPatientProfile(patient||{});
   await loadOdontogram();
 });
+async function savePatientProfile(){
+ const name=$("patientName").value.trim();
+ if(!name)return message("patientMessage","Escribe el nombre del paciente antes de guardar su ficha.",true);
+ const {data:{user}}=await db.auth.getUser();
+ if(!user)return message("patientMessage","Tu sesión terminó. Inicia sesión nuevamente.",true);
+ const profile=getPatientDbData();
+ message("patientMessage","Guardando ficha del paciente…");
+ if(!currentPatientId){
+  const {data,error}=await db.from("Pacientes").insert({nombre_completo:name,...profile}).select("id").single();
+  if(error)return message("patientMessage","No se pudo crear el paciente: "+error.message,true);
+  currentPatientId=data.id;
+ }else{
+  const {error}=await db.from("Pacientes").update({nombre_completo:name,...profile}).eq("id",currentPatientId);
+  if(error)return message("patientMessage","No se pudo actualizar la ficha: "+error.message,true);
+ }
+ await loadPatients();
+ $("patientPicker").value=currentPatientId;
+ $("deletePatientButton").disabled=false;
+ message("patientMessage","Ficha del paciente guardada correctamente. Los datos médicos y personales quedaron asociados a su expediente.");
+}
+$("savePatientButton").addEventListener("click",savePatientProfile);
+
 async function loadOdontogram(){
   if(!currentPatientId)return;
   const {data,error}=await db.from("Odontogramas").select("id,datos,created_at").eq("paciente_id",currentPatientId).order("created_at",{ascending:false}).limit(1).maybeSingle();
@@ -364,7 +424,7 @@ ${patient.nombre_completo}`);
  if(typed!==patient.nombre_completo)return alert("No se confirmó la eliminación. No se realizaron cambios.");
  const {error}=await db.from("Pacientes").delete().eq("id",id);
  if(error){message("patientMessage","No se pudo eliminar el paciente: "+error.message,true);return}
- currentPatientId=null;currentOdontogramId=null;savedRecords=[];pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;$("patientPicker").value="";$("patientName").value="";$("patientFile").value="";$("patientDate").value=localDate();$("deletePatientButton").disabled=true;renderSavedRecords();renderIndividualRecords();updateSelection();await loadPatients();message("patientMessage","Paciente y odontogramas asociados eliminados correctamente.");
+ currentPatientId=null;currentOdontogramId=null;savedRecords=[];pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;$("patientPicker").value="";clearPatientForm();$("deletePatientButton").disabled=true;renderSavedRecords();renderIndividualRecords();updateSelection();await loadPatients();message("patientMessage","Paciente y odontogramas asociados eliminados correctamente.");
 }
 $("deletePatientButton").addEventListener("click",deleteSelectedPatient);
 
@@ -376,7 +436,7 @@ async function saveRecords(){
  const {data:{user}}=await db.auth.getUser();if(!user)return alert("Tu sesión terminó. Inicia sesión nuevamente.");
  message("patientMessage","Guardando en Supabase…");
  if(!currentPatientId){
-  const {data,error}=await db.from("Pacientes").insert({nombre_completo:patient}).select("id").single();
+  const {data,error}=await db.from("Pacientes").insert({nombre_completo:patient,...getPatientDbData()}).select("id").single();
   if(error){message("patientMessage","No se pudo crear el paciente: "+error.message,true);return}
   currentPatientId=data.id;
  }
