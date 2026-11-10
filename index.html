@@ -39,6 +39,10 @@ button{border:none;border-radius:8px;padding:11px 16px;font-size:14px;font-weigh
 .danger-button{background:#a83232;color:#fff;border:0}.danger-button:disabled{opacity:.45;cursor:not-allowed}
 .patient-list{display:grid;gap:8px}.patient-choice{text-align:left;background:#f4f8fa;color:var(--text);border:1px solid var(--border)}
 .patient-choice.active{border:2px solid var(--primary);background:#edf7fa}
+.total-box{margin-top:14px;padding:13px;border-radius:8px;background:#edf7fa;color:var(--primary-dark);font-weight:bold;text-align:right}
+.appointment{border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:10px;background:#fcfeff}
+.appointment h3{color:var(--primary);margin:0 0 8px}
+.appointment .meta{font-size:14px;line-height:1.6}
 @media(max-width:600px){body{padding:10px}.card{padding:14px}.grid{grid-template-columns:1fr;gap:0}.arch{justify-content:flex-start}}
 @media print{body{background:white;padding:0}.no-print,button,.dentition-buttons{display:none!important}.card{box-shadow:none;border:1px solid #ddd;break-inside:avoid}.container{max-width:100%}}
 </style>
@@ -145,8 +149,26 @@ button{border:none;border-radius:8px;padding:11px 16px;font-size:14px;font-weigh
 <h2>6. Registros del odontograma</h2>
 <div class="button-row no-print"><button class="secondary-button" id="printButton">Imprimir / Guardar PDF</button><button class="secondary-button" id="reloadOdontogram">Recargar odontograma</button></div>
 <div id="savedRecords"><p class="empty">Selecciona un paciente para consultar sus registros.</p></div>
+<div id="odontogramTotal" class="total-box">Total de tratamientos: $0.00 MXN</div>
 </section>
 
+<section class="card" id="appointmentsSection">
+<h2>7. Control de citas</h2>
+<p class="hint">Registra y administra las citas del paciente seleccionado. Las citas se guardan en Supabase y solo son visibles para el odontólogo propietario del expediente.</p>
+<div id="appointmentPatientNotice" class="status-message">Selecciona o guarda primero un paciente para administrar sus citas.</div>
+<div id="appointmentForm" class="hidden">
+  <div class="grid">
+    <div class="field"><label for="appointmentDate">Fecha de la cita</label><input id="appointmentDate" type="date" required></div>
+    <div class="field"><label for="appointmentTime">Hora</label><input id="appointmentTime" type="time" required></div>
+  </div>
+  <div class="field"><label for="appointmentReason">Motivo o tratamiento</label><input id="appointmentReason" type="text" placeholder="Ej. Limpieza dental, valoración, resina"></div>
+  <div class="field"><label for="appointmentNotes">Observaciones</label><textarea id="appointmentNotes" placeholder="Indicaciones u observaciones de la cita"></textarea></div>
+  <div class="field"><label for="appointmentStatus">Estado de la cita</label><select id="appointmentStatus"><option>Pendiente</option><option>Confirmada</option><option>Atendida</option><option>Cancelada</option></select></div>
+  <div class="button-row no-print"><button class="primary-button" id="saveAppointmentButton" type="button">Guardar cita</button><button class="secondary-button hidden" id="cancelAppointmentEditButton" type="button">Cancelar edición</button></div>
+</div>
+<h3 style="margin-top:20px">Citas registradas</h3>
+<div id="appointmentsList"><p class="empty">Selecciona un paciente para consultar sus citas.</p></div>
+</section>
 
 </div>
 </div>
@@ -159,12 +181,20 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const permanent={upper:[18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28],lower:[48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38]};
 const temporary={upper:[55,54,53,52,51,61,62,63,64,65],lower:[85,84,83,82,81,71,72,73,74,75]};
 const surfaces=["Oclusal","Mesial","Distal","Vestibular","Lingual / Palatina"];
-let currentDentition="permanent",selectedTeeth=[],pendingRecords=[],savedRecords=[],currentPatientId=null,currentOdontogramId=null,patients=[],recoveryMode=false,editingRecordIndex=null;
+let currentDentition="permanent",selectedTeeth=[],pendingRecords=[],savedRecords=[],currentPatientId=null,currentOdontogramId=null,patients=[],recoveryMode=false,editingRecordIndex=null,appointments=[],editingAppointmentId=null;
 
 const $=id=>document.getElementById(id);
 function message(id,text,error=false){$(id).textContent=text;$(id).classList.toggle("error",error)}
 function escapeHTML(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
 function localDate(){const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-")}
+function formatMoney(value){return new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN"}).format(Number(value)||0)}
+function clearAppointmentForm(){
+  editingAppointmentId=null;
+  $("appointmentDate").value=localDate();$("appointmentTime").value="";
+  $("appointmentReason").value="";$("appointmentNotes").value="";$("appointmentStatus").value="Pendiente";
+  $("saveAppointmentButton").textContent="Guardar cita";
+  $("cancelAppointmentEditButton").classList.add("hidden");
+}
 const patientFieldMap={
  patientAge:"edad",patientWeight:"peso",patientHeight:"talla",patientPhone:"telefono",patientEmail:"correo",
  emergencyContact:"contacto_emergencia",emergencyPhone:"telefono_emergencia",patientAddress:"direccion",
@@ -274,7 +304,7 @@ $("signupButton").addEventListener("click",async()=>{
   if(error)return message("authMessage",error.message,true);
   message("authMessage",data.session?"Cuenta creada. Ya puedes entrar.":"Cuenta creada. Revisa tu correo para confirmar la dirección antes de iniciar sesión.");
 });
-$("logoutButton").addEventListener("click",async()=>{await db.auth.signOut();currentPatientId=null;currentOdontogramId=null;clearPatientForm();savedRecords=[];pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;renderSavedRecords();renderIndividualRecords();updateSelection();});
+$("logoutButton").addEventListener("click",async()=>{await db.auth.signOut();currentPatientId=null;currentOdontogramId=null;clearPatientForm();savedRecords=[];pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;appointments=[];renderAppointments();clearAppointmentForm();renderSavedRecords();renderIndividualRecords();updateSelection();});
 async function loadPatients(){
   const {data,error}=await db.from("Pacientes").select("id,nombre_completo,edad,peso,talla,telefono,correo,contacto_emergencia,telefono_emergencia,direccion,alergias,condiciones_medicas,medicamentos,observaciones_generales,created_at").order("nombre_completo");
   if(error){message("patientMessage","No se pudieron cargar los pacientes: "+error.message,true);return}
@@ -289,19 +319,20 @@ $("refreshPatients").addEventListener("click",loadPatients);
 $("newPatientButton").addEventListener("click",()=>{
   currentPatientId=null;currentOdontogramId=null;editingRecordIndex=null;$("patientPicker").value="";
   clearPatientForm();
-  savedRecords=[];pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;renderSavedRecords();renderIndividualRecords();updateSelection();
+  savedRecords=[];pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;appointments=[];renderAppointments();clearAppointmentForm();renderSavedRecords();renderIndividualRecords();updateSelection();
   message("patientMessage","Paciente nuevo. Escribe su nombre y prepara el odontograma.");
 });
 $("patientPicker").addEventListener("change",async()=>{
   const id=$("patientPicker").value;
   $("deletePatientButton").disabled=!id;
-  if(!id){currentPatientId=null;currentOdontogramId=null;savedRecords=[];pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;clearPatientForm();renderSavedRecords();renderIndividualRecords();updateSelection();$("saveButton").textContent="Guardar en Supabase";return}
+  if(!id){currentPatientId=null;currentOdontogramId=null;savedRecords=[];pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;appointments=[];renderAppointments();clearAppointmentForm();clearPatientForm();renderSavedRecords();renderIndividualRecords();updateSelection();$("saveButton").textContent="Guardar en Supabase";return}
   currentPatientId=id;pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;renderIndividualRecords();updateSelection();
   const patient=patients.find(p=>p.id===id);
   $("patientName").value=patient?.nombre_completo||"";
   $("patientFile").value="";
   setPatientProfile(patient||{});
   await loadOdontogram();
+  await loadAppointments();
 });
 async function savePatientProfile(){
  const name=$("patientName").value.trim();
@@ -320,6 +351,7 @@ async function savePatientProfile(){
  }
  await loadPatients();
  $("patientPicker").value=currentPatientId;
+ await loadAppointments();
  $("deletePatientButton").disabled=false;
  message("patientMessage","Ficha del paciente guardada correctamente. Los datos médicos y personales quedaron asociados a su expediente.");
 }
@@ -354,10 +386,10 @@ function renderIndividualRecords(){
  if(!pendingRecords.length){container.innerHTML='<p class="empty">Primero selecciona dientes y prepara sus registros.</p>';return}
  pendingRecords.forEach(record=>{
   const card=document.createElement("div");card.className="tooth-card";
-  card.innerHTML=`<h3>Diente ${record.tooth}</h3><div class="grid"><div class="field"><label>Diagnóstico (opcional)</label><select class="diagnosis"><option value="">Sin especificar</option><option>Caries dental</option><option>Caries recurrente</option><option>Fractura dental</option><option>Desgaste dental</option><option>Pulpitis reversible</option><option>Pulpitis irreversible</option><option>Necrosis pulpar</option><option>Periodontitis</option><option>Gingivitis</option><option>Ausencia dental</option><option>Otro</option></select></div><div class="field"><label>Tratamiento (opcional)</label><select class="treatment"><option value="">Sin especificar</option><option>Resina</option><option>Amalgama</option><option>Ionómero de vidrio</option><option>Extracción</option><option>Endodoncia</option><option>Corona</option><option>Profilaxis</option><option>Raspado y alisado radicular</option><option>Sellador de fosetas y fisuras</option><option>Aplicación de flúor</option><option>Otro</option></select></div></div><div class="field"><label>Estado del tratamiento (opcional)</label><select class="status"><option value="">Sin especificar</option><option>Pendiente</option><option>En proceso</option><option>Realizado</option><option>En observación</option><option>No requiere tratamiento</option></select></div><div class="field"><label>Superficies dentales</label><div class="surface-options"></div></div><div class="field"><label>Observaciones individuales</label><textarea class="notes" placeholder="Observaciones del diente"></textarea></div>`;
-  const diagnosis=card.querySelector(".diagnosis"),treatment=card.querySelector(".treatment"),status=card.querySelector(".status"),notes=card.querySelector(".notes");
-  diagnosis.value=record.diagnosis||"";treatment.value=record.treatment||"";status.value=record.status||"";notes.value=record.notes||"";
-  diagnosis.addEventListener("change",()=>record.diagnosis=diagnosis.value);treatment.addEventListener("change",()=>record.treatment=treatment.value);status.addEventListener("change",()=>record.status=status.value);notes.addEventListener("input",()=>record.notes=notes.value);
+  card.innerHTML=`<h3>Diente ${record.tooth}</h3><div class="grid"><div class="field"><label>Diagnóstico (opcional)</label><select class="diagnosis"><option value="">Sin especificar</option><option>Caries dental</option><option>Caries recurrente</option><option>Fractura dental</option><option>Desgaste dental</option><option>Pulpitis reversible</option><option>Pulpitis irreversible</option><option>Necrosis pulpar</option><option>Periodontitis</option><option>Gingivitis</option><option>Ausencia dental</option><option>Otro</option></select></div><div class="field"><label>Tratamiento (opcional)</label><select class="treatment"><option value="">Sin especificar</option><option>Resina</option><option>Amalgama</option><option>Ionómero de vidrio</option><option>Extracción</option><option>Endodoncia</option><option>Corona</option><option>Profilaxis</option><option>Raspado y alisado radicular</option><option>Sellador de fosetas y fisuras</option><option>Aplicación de flúor</option><option>Otro</option></select></div></div><div class="field"><label>Estado del tratamiento (opcional)</label><select class="status"><option value="">Sin especificar</option><option>Pendiente</option><option>En proceso</option><option>Realizado</option><option>En observación</option><option>No requiere tratamiento</option></select></div><div class="field"><label>Precio del tratamiento (MXN)</label><input class="price" type="number" min="0" step="0.01" placeholder="Ej. 650.00"></div><div class="field"><label>Superficies dentales</label><div class="surface-options"></div></div><div class="field"><label>Observaciones individuales</label><textarea class="notes" placeholder="Observaciones del diente"></textarea></div>`;
+  const diagnosis=card.querySelector(".diagnosis"),treatment=card.querySelector(".treatment"),status=card.querySelector(".status"),price=card.querySelector(".price"),notes=card.querySelector(".notes");
+  diagnosis.value=record.diagnosis||"";treatment.value=record.treatment||"";status.value=record.status||"";price.value=record.price??"";notes.value=record.notes||"";
+  diagnosis.addEventListener("change",()=>record.diagnosis=diagnosis.value);treatment.addEventListener("change",()=>record.treatment=treatment.value);status.addEventListener("change",()=>record.status=status.value);price.addEventListener("input",()=>record.price=price.value===""?null:Number(price.value));notes.addEventListener("input",()=>record.notes=notes.value);
   const sc=card.querySelector(".surface-options");surfaces.forEach(surface=>{const label=document.createElement("label");label.className="surface-option";const cb=document.createElement("input");cb.type="checkbox";cb.checked=(record.surfaces||[]).includes(surface);cb.addEventListener("change",()=>{record.surfaces=record.surfaces||[];record.surfaces=cb.checked?[...new Set([...record.surfaces,surface])]:record.surfaces.filter(s=>s!==surface)});label.append(cb,document.createTextNode(surface));sc.appendChild(label)});
   container.appendChild(card);
  });
@@ -365,16 +397,19 @@ function renderIndividualRecords(){
 function prepareRecords(){
  if(!selectedTeeth.length)return alert("Selecciona al menos un diente.");
  const common={diagnosis:$("generalDiagnosis").value,treatment:$("generalTreatment").value,status:$("generalStatus").value,notes:$("generalNotes").value};
- pendingRecords=selectedTeeth.map(tooth=>({tooth,surfaces:[],...common}));
+ pendingRecords=selectedTeeth.map(tooth=>({tooth,surfaces:[],price:null,...common})).sort((a,b)=>Number(a.tooth)-Number(b.tooth));
  renderIndividualRecords();$("individualRecords").scrollIntoView({behavior:"smooth",block:"start"});
 }
 $("prepareButton").addEventListener("click",prepareRecords);
 function renderSavedRecords(){
+ savedRecords.sort((a,b)=>Number(a.tooth)-Number(b.tooth));
  const c=$("savedRecords");c.innerHTML="";
+ const total=savedRecords.reduce((sum,r)=>sum+(Number(r.price)||0),0);
+ $("odontogramTotal").textContent="Total de tratamientos: "+formatMoney(total);
  if(!savedRecords.length){c.innerHTML='<p class="empty">Todavía no hay registros guardados.</p>';return}
  savedRecords.forEach(r=>{
   const div=document.createElement("div");div.className="record";
-  const rows=[["Dentición",r.dentition==="temporary"?"Temporal":"Permanente"],["Diente",r.tooth],["Diagnóstico",r.diagnosis||"Sin especificar"],["Tratamiento",r.treatment||"Sin especificar"],["Estado",r.status||"Sin especificar"],["Superficies",(r.surfaces||[]).join(", ")||"Sin especificar"],["Observaciones",r.notes||"Sin observaciones"]];
+  const rows=[["Dentición",r.dentition==="temporary"?"Temporal":"Permanente"],["Diente",r.tooth],["Diagnóstico",r.diagnosis||"Sin especificar"],["Tratamiento",r.treatment||"Sin especificar"],["Precio",r.price===null||r.price===undefined||r.price===""?"Sin especificar":formatMoney(r.price)],["Estado",r.status||"Sin especificar"],["Superficies",(r.surfaces||[]).join(", ")||"Sin especificar"],["Observaciones",r.notes||"Sin observaciones"]];
   div.innerHTML=rows.map(([k,v])=>`<strong>${k}:</strong> ${escapeHTML(v)}<br>`).join("");
   const actions=document.createElement("div");actions.className="button-row no-print";
   const edit=document.createElement("button");edit.type="button";edit.className="secondary-button";edit.textContent="Editar registro";
@@ -424,9 +459,62 @@ ${patient.nombre_completo}`);
  if(typed!==patient.nombre_completo)return alert("No se confirmó la eliminación. No se realizaron cambios.");
  const {error}=await db.from("Pacientes").delete().eq("id",id);
  if(error){message("patientMessage","No se pudo eliminar el paciente: "+error.message,true);return}
- currentPatientId=null;currentOdontogramId=null;savedRecords=[];pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;$("patientPicker").value="";clearPatientForm();$("deletePatientButton").disabled=true;renderSavedRecords();renderIndividualRecords();updateSelection();await loadPatients();message("patientMessage","Paciente y odontogramas asociados eliminados correctamente.");
+ currentPatientId=null;currentOdontogramId=null;savedRecords=[];pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;appointments=[];renderAppointments();clearAppointmentForm();$("patientPicker").value="";clearPatientForm();$("deletePatientButton").disabled=true;renderSavedRecords();renderIndividualRecords();updateSelection();await loadPatients();message("patientMessage","Paciente, odontogramas y citas asociados eliminados correctamente.");
 }
 $("deletePatientButton").addEventListener("click",deleteSelectedPatient);
+
+async function loadAppointments(){
+ if(!currentPatientId){appointments=[];renderAppointments();return}
+ $("appointmentPatientNotice").textContent="Cargando citas del paciente…";
+ $("appointmentForm").classList.remove("hidden");
+ const {data,error}=await db.from("Citas").select("id,paciente_id,fecha,hora,motivo,observaciones,estado,created_at").eq("paciente_id",currentPatientId).order("fecha",{ascending:true}).order("hora",{ascending:true});
+ if(error){message("appointmentPatientNotice","No se pudieron cargar las citas: "+error.message,true);return}
+ appointments=data||[];
+ $("appointmentPatientNotice").textContent="Administrando citas de: "+($("patientName").value.trim()||"paciente seleccionado");
+ renderAppointments();
+}
+function renderAppointments(){
+ const list=$("appointmentsList");if(!list)return;list.innerHTML="";
+ if(!currentPatientId){list.innerHTML='<p class="empty">Selecciona un paciente para consultar sus citas.</p>';$("appointmentForm")?.classList.add("hidden");return}
+ $("appointmentForm").classList.remove("hidden");
+ if(!appointments.length){list.innerHTML='<p class="empty">Este paciente todavía no tiene citas registradas.</p>';return}
+ appointments.forEach(a=>{
+  const card=document.createElement("div");card.className="appointment";
+  const title=document.createElement("h3");title.textContent=(a.fecha||"")+" · "+(a.hora||"").slice(0,5);
+  const details=document.createElement("div");details.className="meta";
+  details.innerHTML=`<strong>Motivo:</strong> ${escapeHTML(a.motivo||"Sin especificar")}<br><strong>Estado:</strong> ${escapeHTML(a.estado||"Pendiente")}<br><strong>Observaciones:</strong> ${escapeHTML(a.observaciones||"Sin observaciones")}`;
+  const actions=document.createElement("div");actions.className="button-row no-print";
+  const edit=document.createElement("button");edit.type="button";edit.className="secondary-button";edit.textContent="Editar cita";edit.addEventListener("click",()=>editAppointment(a));
+  const remove=document.createElement("button");remove.type="button";remove.className="danger-button";remove.textContent="Eliminar cita";remove.addEventListener("click",()=>deleteAppointment(a));
+  actions.append(edit,remove);card.append(title,details,actions);list.appendChild(card);
+ });
+}
+function editAppointment(a){
+ editingAppointmentId=a.id;$("appointmentDate").value=a.fecha||"";$("appointmentTime").value=(a.hora||"").slice(0,5);
+ $("appointmentReason").value=a.motivo||"";$("appointmentNotes").value=a.observaciones||"";$("appointmentStatus").value=a.estado||"Pendiente";
+ $("saveAppointmentButton").textContent="Guardar cambios de la cita";$("cancelAppointmentEditButton").classList.remove("hidden");
+ $("appointmentsSection").scrollIntoView({behavior:"smooth",block:"start"});
+}
+async function saveAppointment(){
+ if(!currentPatientId)return message("appointmentPatientNotice","Primero selecciona o guarda un paciente.",true);
+ const fecha=$("appointmentDate").value,hora=$("appointmentTime").value;
+ if(!fecha||!hora)return message("appointmentPatientNotice","Selecciona la fecha y la hora de la cita.",true);
+ const payload={paciente_id:currentPatientId,fecha,hora,motivo:$("appointmentReason").value.trim()||null,observaciones:$("appointmentNotes").value.trim()||null,estado:$("appointmentStatus").value};
+ message("appointmentPatientNotice","Guardando cita…");
+ let result;
+ if(editingAppointmentId)result=await db.from("Citas").update(payload).eq("id",editingAppointmentId).eq("paciente_id",currentPatientId);
+ else result=await db.from("Citas").insert(payload);
+ if(result.error)return message("appointmentPatientNotice","No se pudo guardar la cita: "+result.error.message,true);
+ clearAppointmentForm();await loadAppointments();message("appointmentPatientNotice","Cita guardada correctamente.");
+}
+async function deleteAppointment(a){
+ if(!confirm(`¿Eliminar la cita del ${a.fecha} a las ${(a.hora||"").slice(0,5)}? Esta acción no se puede deshacer.`))return;
+ const {error}=await db.from("Citas").delete().eq("id",a.id).eq("paciente_id",currentPatientId);
+ if(error)return message("appointmentPatientNotice","No se pudo eliminar la cita: "+error.message,true);
+ await loadAppointments();message("appointmentPatientNotice","Cita eliminada correctamente.");
+}
+$("saveAppointmentButton").addEventListener("click",saveAppointment);
+$("cancelAppointmentEditButton").addEventListener("click",()=>{clearAppointmentForm();message("appointmentPatientNotice","Edición cancelada.")});
 
 async function saveRecords(){
  if(!pendingRecords.length)return alert("Primero prepara los registros de los dientes seleccionados.");
@@ -443,10 +531,11 @@ async function saveRecords(){
  const {data:patientData,error:patientError}=await db.from("Pacientes").select("id,nombre_completo").eq("id",currentPatientId).single();
  if(patientError||!patientData){message("patientMessage","No se pudo verificar el paciente. "+(patientError?.message||""),true);return}
  const isEditing=editingRecordIndex!==null;
- const originalBeforeEdit=isEditing?{...savedRecords[editingRecordIndex],surfaces:[...(savedRecords[editingRecordIndex].surfaces||[])]}:null;
+ const previousRecords=savedRecords.map(r=>({...r,surfaces:[...(r.surfaces||[])]}));
  const additions=pendingRecords.map(r=>({...r,dentition:currentDentition}));
  if(isEditing)savedRecords[editingRecordIndex]=additions[0];
  else savedRecords=[...savedRecords,...additions];
+ savedRecords.sort((a,b)=>Number(a.tooth)-Number(b.tooth));
  const payload={date,file,records:savedRecords};
  let result;
  if(currentOdontogramId){
@@ -455,16 +544,17 @@ async function saveRecords(){
   result=await db.from("Odontogramas").insert({paciente_id:currentPatientId,datos:payload}).select("id").single();
   if(!result.error)currentOdontogramId=result.data.id;
  }
- if(result.error){if(isEditing){savedRecords[editingRecordIndex]=originalBeforeEdit}else{savedRecords.splice(savedRecords.length-additions.length,additions.length)}message("patientMessage","No se pudo guardar el odontograma: "+result.error.message,true);return}
+ if(result.error){savedRecords=previousRecords;message("patientMessage","No se pudo guardar el odontograma: "+result.error.message,true);return}
  pendingRecords=[];selectedTeeth=[];editingRecordIndex=null;renderIndividualRecords();renderSavedRecords();drawTeeth();$("saveButton").textContent="Guardar en Supabase";
  $("generalDiagnosis").value="";$("generalTreatment").value="";$("generalStatus").value="";$("generalNotes").value="";
  await loadPatients();$("patientPicker").value=currentPatientId;
+ await loadAppointments();
  message("patientMessage","Odontograma guardado correctamente en tu cuenta.");
 }
 $("saveButton").addEventListener("click",saveRecords);
 $("reloadOdontogram").addEventListener("click",loadOdontogram);
 $("printButton").addEventListener("click",()=>window.print());
-drawTeeth();initAuth();
+drawTeeth();clearAppointmentForm();renderAppointments();initAuth();
 </script>
 </body>
 </html>
